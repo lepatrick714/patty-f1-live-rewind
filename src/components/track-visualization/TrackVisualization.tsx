@@ -10,6 +10,7 @@ import { useRaceStore } from "@/hooks/useRaceStore";
 import { calculateFastestLap } from "@/utils/lapCalculator";
 import { getTrackOptimization } from "@/utils/trackConfig";
 import { PauseIcon, PlayIcon, RotateCcwIcon, ZapIcon } from "@/app/assets/Icons";
+import { TrackPlayerControlsPanel } from "./TrackPlayerControlsPanel";
 
 interface AnimationState {
   isPlaying: boolean;
@@ -152,12 +153,6 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
           return acc;
         }, {} as Record<number, GPSPoint[]>);
       }
-
-      // Keep the fastestPoints as the canonical spatial path (elapsed is relative to the fastest lap)
-      const fastestMaxElapsed =
-        fastestPoints.length > 0
-          ? Math.max(...fastestPoints.map((p) => p.elapsed))
-          : 0;
 
       // Set the master lap time (seconds) to the slowest lap time among selected drivers
       // so the timeline runs until the slowest driver completes their lap. Fastest
@@ -549,34 +544,6 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
     drawTrajectories(ctx, p);
     drawCars(ctx, p);
   };
-  /**
-   * // Click handler to log world x,y of nearest car
-   * useEffect(() => {
-   *   const canvas = canvasRef.current;
-   *   if (!canvas) return;
-   *   const onClick = (e: MouseEvent) => {
-   *     if (!bounds || Object.keys(currentPositionsRef.current).length === 0) return;
-   *     const rect = canvas.getBoundingClientRect();
-   *     const cx = e.clientX - rect.left;
-   *     const cy = e.clientY - rect.top;
-   *     let best: { dn: number; dist: number; wx: number; wy: number } | null = null;
-   *     for (const [k, v] of Object.entries(currentPositionsRef.current)) {
-   *       const [px, py] = worldToCanvas(v.x, v.y);
-   *       const dx = px - cx;
-   *       const dy = py - cy;
-   *       const d2 = dx * dx + dy * dy;
-   *       if (!best || d2 < best!.dist) best = { dn: Number(k), dist: d2, wx: v.x, wy: v.y };
-   *     }
-   *     if (best && best.dist <= 400) {
-   *       // eslint-disable-next-line no-console
-   *       console.log(`Car ${best.dn} @ x=${best.wx.toFixed(2)}, y=${best.wy.toFixed(2)}`);
-   *     }
-   *   };
-   *   canvas.addEventListener('click', onClick);
-   *   return () => canvas.removeEventListener('click', onClick);
-   *   // eslint-disable-next-line react-hooks/exhaustive-deps
-   * }, [bounds, processedDrivers.length]);
-   */
 
   // RAF loop
   const animate = (ts: number) => {
@@ -675,7 +642,6 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
     const handleResize = () => render();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // === ZOOM + PAN handlers ===
@@ -686,6 +652,7 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
     let dragging = false;
     let lastX = 0,
       lastY = 0;
+    let activePointerId: number | null = null;
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
@@ -715,7 +682,10 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
     };
 
     const onPointerDown = (e: PointerEvent) => {
+      // only primary button for panning
+      if (e.button !== 0) return;
       dragging = true;
+      activePointerId = e.pointerId;
       lastX = e.clientX;
       lastY = e.clientY;
       canvas.style.cursor = "grabbing";
@@ -723,23 +693,25 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
     };
 
     const onPointerMove = (e: PointerEvent) => {
-      if (!dragging) return;
+      if (e.pointerId !== activePointerId) return;
       const dx = e.clientX - lastX;
       const dy = e.clientY - lastY;
       lastX = e.clientX;
       lastY = e.clientY;
 
+      // pan is stored in *pixels* in your transform, so don't divide by zoom
       cameraRef.current.panX += dx;
       cameraRef.current.panY += dy;
-      // no render() here — RAF will repaint
+
+      // no immediate render; RAF loop repaints
     };
 
-    const onPointerUp = (e: PointerEvent) => {
+    const onPointerUpOrCancel = (e: PointerEvent) => {
+      if (e.pointerId !== activePointerId) return;
       dragging = false;
+      activePointerId = null;
       canvas.style.cursor = "grab";
-      try {
-        canvas.releasePointerCapture(e.pointerId);
-      } catch { }
+      try { canvas.releasePointerCapture(e.pointerId); } catch { }
     };
 
     const onDoubleClick = () => {
@@ -751,34 +723,20 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
     canvas.addEventListener("wheel", onWheel, { passive: false });
     canvas.addEventListener("pointerdown", onPointerDown);
     canvas.addEventListener("pointermove", onPointerMove);
-    canvas.addEventListener("pointerup", onPointerUp);
-    canvas.addEventListener("pointercancel", onPointerUp);
+    canvas.addEventListener("pointerup", onPointerUpOrCancel);
+    canvas.addEventListener("pointercancel", onPointerUpOrCancel);
     canvas.addEventListener("dblclick", onDoubleClick);
 
     return () => {
       canvas.removeEventListener("wheel", onWheel);
       canvas.removeEventListener("pointerdown", onPointerDown);
       canvas.removeEventListener("pointermove", onPointerMove);
-      canvas.removeEventListener("pointerup", onPointerUp);
-      canvas.removeEventListener("pointercancel", onPointerUp);
+      canvas.removeEventListener("pointerup", onPointerUpOrCancel);
+      canvas.removeEventListener("pointercancel", onPointerUpOrCancel);
       canvas.removeEventListener("dblclick", onDoubleClick);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bounds]);
-
-  const togglePlayPause = () => {
-    setAnimationState((prev) => {
-      if (!prev.isPlaying) lastTimestampRef.current = 0; // fresh delta after resume
-      return { ...prev, isPlaying: !prev.isPlaying };
-    });
-  };
-
-  const resetAnimation = () => {
-    progressRef.current = 0;
-    setAnimationState((prev) => ({ ...prev, isPlaying: false, progress: 0 }));
-    setAnimationProgress(0);
-    render();
-  };
 
   function getDriverColor(driverNumber: number): string {
     const colors = ["ED1131", "FF8000", "005AFF", "2D826D", "DC143C", "F58020"];
@@ -856,102 +814,22 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
                   imageRendering: "auto",
                   touchAction: "none",
                   background: "#0f0f12",
+                  overflow: "visible", // NEEDED for camera panning / dragging.
                 }}
               />
 
               {/* Controls overlay - positioned to not interfere with canvas */}
-              <div className="absolute bottom-3 left-3 right-3 z-10">
-                <div className="flex w-full items-center justify-between gap-2 sm:gap-3 rounded-[12px] px-1.5 py-1 sm:px-3 sm:py-2 bg-[rgba(15,15,18,0.65)] backdrop-blur-md border border-[#2a2b31] overflow-hidden flex-wrap sm:flex-nowrap">
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-6 w-6 sm:h-7 sm:w-7 p-0"
-                      onClick={togglePlayPause}
-                      disabled={isLoading || processedDrivers.length === 0}
-                      title={animationState.isPlaying ? "Pause" : "Play"}
-                    >
-                      {animationState.isPlaying ? (
-                        <PauseIcon className="w-[12px] h-[12px] sm:w-[14px] sm:h-[14px]" />
-                      ) : (
-                        <PlayIcon className="w-[12px] h-[12px] sm:w-[14px] sm:h-[14px]" />
-                      )}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-6 w-6 sm:h-7 sm:w-7 p-0"
-                      onClick={resetAnimation}
-                      disabled={isLoading || processedDrivers.length === 0}
-                      title="Restart"
-                    >
-                      <RotateCcwIcon className="w-[12px] h-[12px] sm:w-[14px] sm:h-[14px]" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-6 sm:h-7 px-2 text-[10px] sm:text-xs leading-none"
-                      onClick={() => {
-                        cameraRef.current = { zoom: 1, panX: 0, panY: 0 };
-                        render();
-                      }}
-                      disabled={isLoading || processedDrivers.length === 0}
-                    >
-                      Reset View
-                    </Button>
-                  </div>
-
-                  <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
-                    <div className="flex items-center gap-2 w-40 sm:w-56 shrink-0">
-                      <span className="text-xs text-zinc-300 select-none">
-                        Progress
-                      </span>
-                      <Slider
-                        value={[animationState.progress * 100]}
-                        onValueChange={(value) => {
-                          const p = value[0] / 100;
-                          progressRef.current = p;
-                          setAnimationState((prev) => ({
-                            ...prev,
-                            progress: p,
-                          }));
-                          setAnimationProgress(p);
-                          render();
-                        }}
-                        max={100}
-                        step={1}
-                        className="w-full h-5 sm:h-6 touch-pan-y"
-                        aria-label="Animation progress"
-                      />
-                      <span className="text-[10px] sm:text-xs text-zinc-400 w-7 sm:w-8 text-right tabular-nums select-none">
-                        {Math.round(animationState.progress * 100)}%
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 w-36 sm:w-48 shrink-0">
-                      <span className="text-[10px] sm:text-xs text-zinc-300 select-none">
-                        Speed
-                      </span>
-                      <Slider
-                        value={[animationState.speed]}
-                        onValueChange={(value) =>
-                          setAnimationState((prev) => ({
-                            ...prev,
-                            speed: value[0],
-                          }))
-                        }
-                        min={0.1}
-                        max={3}
-                        step={0.1}
-                        className="w-full h-5 sm:h-6 touch-pan-y"
-                        aria-label="Playback speed"
-                      />
-                      <span className="text-[10px] sm:text-xs text-zinc-400 w-9 sm:w-10 text-right tabular-nums select-none">
-                        {animationState.speed.toFixed(1)}x
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <TrackPlayerControlsPanel
+                isLoading={isLoading}
+                animationState={animationState}
+                processedDrivers={processedDrivers}
+                cameraRef={cameraRef}
+                render={render}
+                setAnimationState={setAnimationState}
+                progressRef={progressRef}
+                setAnimationProgress={setAnimationProgress}
+                lastTimestampRef={lastTimestampRef}
+              />
             </div>
           </>
         )}
