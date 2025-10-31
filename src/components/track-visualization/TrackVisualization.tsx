@@ -1,6 +1,6 @@
-import { Card, CardContent } from '@/components/card';
-import { Slider } from '@/components/slider';
-import { Button } from '@/components/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Slider } from '@/components/ui/slider';
+import { Button } from '@/components/ui/button';
 import {
   PlayIcon,
   PauseIcon,

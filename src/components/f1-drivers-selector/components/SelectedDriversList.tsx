@@ -1,4 +1,4 @@
-import { Badge } from '@/components/badge';
+import { Badge } from '@/components/ui/badge';
 
 interface Driver {
   driver_number: number;

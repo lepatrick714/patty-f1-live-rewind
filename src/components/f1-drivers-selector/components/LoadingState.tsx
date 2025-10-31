@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserIcon } from '@/app/assets/Icons';
 
 export function LoadingState() {

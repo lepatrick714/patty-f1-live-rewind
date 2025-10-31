@@ -1,5 +1,5 @@
 import { UserIcon } from '@/app/assets/Icons';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface EmptyStateProps {
   message: string;

@@ -1,9 +1,11 @@
 'use client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/card';
-import { Checkbox } from '@/components/checkbox';
-import { Badge } from '@/components/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { TimerIcon, UserIcon } from '@/app/assets/Icons';
 import { useRaceStore } from '../../hooks/useRaceStore';
+import { useQuery } from '@tanstack/react-query';
+import { f1Api } from '@/api/f1Api';
 
 // Mock data for development - remove when implementing real API
 const mockDrivers = [
@@ -55,110 +57,101 @@ function F1DriverSelector() {
   const { selectedSession, selectedDrivers, toggleDriver } = useRaceStore();
 
   // TODO: Implement API calls for production
-  /*
-    const {
-        data: drivers,
-        isLoading,
-        error,
-    } = useQuery({
-        queryKey: ["drivers", selectedSession?.session_key],
-        queryFn: () =>
-            selectedSession
-                ? f1Api.getDrivers(selectedSession.session_key)
-                : Promise.resolve([]),
-        enabled: !!selectedSession,
-    });
+  const {
+    data: drivers,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["drivers", selectedSession?.session_key],
+    queryFn: () =>
+      selectedSession
+        ? f1Api.getDrivers(selectedSession.session_key)
+        : Promise.resolve([]),
+    enabled: !!selectedSession,
+  });
 
-    // Session-wide fastest driver (across all drivers in session)
-    const { data: sessionFastest } = useQuery<{
-        driverNumber: number;
-        lapTime: number;
-    } | null>({
-        queryKey: ["session-fastest", selectedSession?.session_key],
-        queryFn: async () => {
-            if (!selectedSession) return null;
-            const allDrivers = await f1Api.getDrivers(selectedSession.session_key);
-            const lapResults = await Promise.all(
-                allDrivers.map(async (d: any) => {
-                    try {
-                        const laps = await f1Api.getLaps(
-                            selectedSession.session_key,
-                            d.driver_number
-                        );
-                        if (!laps || laps.length === 0) return null;
-                        const f = calculateFastestLap(laps);
-                        return {
-                            driverNumber: d.driver_number,
-                            lapTime: f.fastestLap.lapTime,
-                        } as const;
-                    } catch {
-                        return null;
-                    }
-                })
-            );
-            const valid = lapResults.filter(Boolean) as Array<{
-                driverNumber: number;
-                lapTime: number;
-            }>;
-            if (valid.length === 0) return null;
-            valid.sort((a, b) => a.lapTime - b.lapTime);
-            return valid[0];
-        },
-        enabled: !!selectedSession,
-        staleTime: 60_000,
-    });
+  const sessionFastest = {}; // Placeholder for session fastest driver data
+  const fastestInfo = {}; // Placeholder for fastest selected driver data
 
-    // Find the fastest driver among currently selected (by fastest lap time)
-    const { data: fastestInfo } = useQuery<{
-        fastestDriverNumber: number;
-        lapTime: number;
-    } | null>({
-        queryKey: ["fastest-driver", selectedSession?.session_key, selectedDrivers],
-        queryFn: async () => {
-            if (!selectedSession || selectedDrivers.length === 0) return null;
-            const lapResults = await Promise.all(
-                selectedDrivers.map(async (driverNumber) => {
-                    try {
-                        const laps = await f1Api.getLaps(
-                            selectedSession.session_key,
-                            driverNumber
-                        );
-                        if (!laps || laps.length === 0) return null;
-                        const fastest = calculateFastestLap(laps);
-                        return {
-                            driverNumber,
-                            lapTime: fastest.fastestLap.lapTime,
-                        } as const;
-                    } catch {
-                        return null;
-                    }
-                })
-            );
-            const valid = lapResults.filter(Boolean) as Array<{
-                driverNumber: number;
-                lapTime: number;
-            }>;
-            if (valid.length === 0) return null;
-            valid.sort((a, b) => a.lapTime - b.lapTime);
-            return {
-                fastestDriverNumber: valid[0].driverNumber,
-                lapTime: valid[0].lapTime,
-            };
-        },
-        enabled: !!(selectedSession && selectedDrivers.length > 0),
-        staleTime: 30_000,
-    });
-    */
+  // // Session-wide fastest driver (across all drivers in session)
+  // const { data: sessionFastest } = useQuery<{
+  //   driverNumber: number;
+  //   lapTime: number;
+  // } | null>({
+  //   queryKey: ["session-fastest", selectedSession?.session_key],
+  //   queryFn: async () => {
+  //     if (!selectedSession) return null;
+  //     const allDrivers = await f1Api.getDrivers(selectedSession.session_key);
+  //     const lapResults = await Promise.all(
+  //       allDrivers.map(async (d: any) => {
+  //         try {
+  //           const laps = await f1Api.getLaps(
+  //             selectedSession.session_key,
+  //             d.driver_number
+  //           );
+  //           if (!laps || laps.length === 0) return null;
+  //           const f = calculateFastestLap(laps);
+  //           return {
+  //             driverNumber: d.driver_number,
+  //             lapTime: f.fastestLap.lapTime,
+  //           } as const;
+  //         } catch {
+  //           return null;
+  //         }
+  //       })
+  //     );
+  //     const valid = lapResults.filter(Boolean) as Array<{
+  //       driverNumber: number;
+  //       lapTime: number;
+  //     }>;
+  //     if (valid.length === 0) return null;
+  //     valid.sort((a, b) => a.lapTime - b.lapTime);
+  //     return valid[0];
+  //   },
+  //   enabled: !!selectedSession,
+  //   staleTime: 60_000,
+  // });
 
-  // Mock data for development
-  const drivers = mockDrivers;
-  const isLoading = false;
-  const error = null;
-  const sessionFastest = { driverNumber: 1 }; // Mock fastest driver
-  const fastestInfo =
-    selectedDrivers.length > 0
-      ? { fastestDriverNumber: selectedDrivers[0] }
-      : null;
+  // // Find the fastest driver among currently selected (by fastest lap time)
+  // const { data: fastestInfo } = useQuery<{
+  //   fastestDriverNumber: number;
+  //   lapTime: number;
+  // } | null>({
+  //   queryKey: ["fastest-driver", selectedSession?.session_key, selectedDrivers],
+  //   queryFn: async () => {
+  //     if (!selectedSession || selectedDrivers.length === 0) return null;
+  //     const lapResults = await Promise.all(
+  //       selectedDrivers.map(async (driverNumber) => {
+  //         try {
+  //           const laps = await f1Api.getLaps(
+  //             selectedSession.session_key,
+  //             driverNumber
+  //           );
+  //           if (!laps || laps.length === 0) return null;
+  //           const fastest = calculateFastestLap(laps);
+  //           return {
+  //             driverNumber,
+  //             lapTime: fastest.fastestLap.lapTime,
+  //           } as const;
+  //         } catch {
+  //           return null;
+  //         }
+  //       })
+  //     );
+  //     const valid = lapResults.filter(Boolean) as Array<{
+  //       driverNumber: number;
+  //       lapTime: number;
+  //     }>;
+  //     if (valid.length === 0) return null;
+  //     valid.sort((a, b) => a.lapTime - b.lapTime);
+  //     return {
+  //       fastestDriverNumber: valid[0].driverNumber,
+  //       lapTime: valid[0].lapTime,
+  //     };
+  //   },
+  //   enabled: !!(selectedSession && selectedDrivers.length > 0),
+  //   staleTime: 30_000,
+  // });
 
   if (!selectedSession) {
     return (
@@ -277,10 +270,10 @@ function F1DriverSelector() {
         <div className="h-full space-y-2 overflow-y-auto pr-1">
           {drivers?.map(driver => {
             const isSelected = selectedDrivers.includes(driver.driver_number);
-            const isSessionFastest =
-              sessionFastest?.driverNumber === driver.driver_number;
-            const isFastestSelected =
-              fastestInfo?.fastestDriverNumber === driver.driver_number;
+            const isSessionFastest = null;
+            // sessionFastest?.driverNumber === driver.driver_number;
+            const isFastestSelected = null;
+            // fastestInfo?.fastestDriverNumber === driver.driver_number;
             return (
               <div
                 key={driver.driver_number}

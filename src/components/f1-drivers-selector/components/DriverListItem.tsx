@@ -1,5 +1,5 @@
-import { Checkbox } from '@/components/checkbox';
-import { Badge } from '@/components/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { TimerIcon } from '@/app/assets/Icons';
 
 interface Driver {

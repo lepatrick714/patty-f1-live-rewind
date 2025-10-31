@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Session, Driver, LapData } from '@/models';
+import { Session, LapData } from '@/models';
 
 interface RaceState {
   selectedSession: Session | null;
