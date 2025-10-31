@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/card';
 import { Checkbox } from '@/components/checkbox';
 import { Badge } from '@/components/badge';
 import { TimerIcon, UserIcon } from '@/app/assets/Icons';
-import { useRaceStore } from './hooks/useRaceStore';
+import { useRaceStore } from '../../hooks/useRaceStore';
 
 // Mock data for development - remove when implementing real API
 const mockDrivers = [
