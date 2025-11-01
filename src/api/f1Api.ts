@@ -1,5 +1,6 @@
 import { Session, Driver, LapData, LocationData } from '@/models';
-import { fetchWithRetry, withRetry, withBatchMap, BatchMapOptions } from '@/utils/retry';
+import { fetchWithRetry, withRetry } from '@/utils/retry';
+import { withBatchMap } from '@/utils/batch';
 
 const API_BASE = (
   process.env.NEXT_PUBLIC_OPENF1_API_URL || 'https://api.openf1.org/v1'
