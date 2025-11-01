@@ -43,6 +43,7 @@ interface RaceState {
   
   // Location data actions
   setSessionLocationData: (data: Record<number, LocationData[]>) => void;
+  addDriverLocationData: (driverNumber: number, locationData: LocationData[]) => void;
   setLoadedDrivers: (drivers: Set<number>) => void;
   addLoadedDriver: (driverNumber: number) => void;
   setFetchingDrivers: (drivers: Set<number>) => void;
@@ -187,6 +188,15 @@ export function useRaceStore(): RaceState {
   // Location data actions
   const setSessionLocationData = useCallback((data: Record<number, LocationData[]>) => {
     setState({ sessionLocationData: data });
+  }, []);
+
+  const addDriverLocationData = useCallback((driverNumber: number, locationData: LocationData[]) => {
+    setState(state => ({
+      sessionLocationData: {
+        ...state.sessionLocationData,
+        [driverNumber]: locationData
+      }
+    }));
   }, []);
 
   const setLoadedDrivers = useCallback((drivers: Set<number>) => {
@@ -416,6 +426,7 @@ export function useRaceStore(): RaceState {
     
     // Location data actions
     setSessionLocationData,
+    addDriverLocationData,
     setLoadedDrivers,
     addLoadedDriver,
     setFetchingDrivers,

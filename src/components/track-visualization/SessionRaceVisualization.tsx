@@ -62,7 +62,7 @@ export function SessionRaceVisualization({
   const lastTimestampRef = useRef<number>(0);
   const progressRef = useRef<number>(0);
   const lastUIUpdateRef = useRef<number>(0);
-  
+
   // Camera controls
   const cameraRef = useRef({ zoom: 1, panX: 0, panY: 0 });
   const MIN_ZOOM = 0.6;
@@ -78,7 +78,7 @@ export function SessionRaceVisualization({
     .map((driverNumber) => {
       const driver = driverData.find((d) => d.driver_number === driverNumber);
       const locations = locationData[driverNumber] || [];
-      
+
       return {
         driverNumber,
         acronym: driver?.name_acronym || `#${driverNumber}`,
@@ -92,8 +92,18 @@ export function SessionRaceVisualization({
           z: loc.z || 0,
         })),
       };
-    })
-    .filter((d) => d.locations.length > 0);
+    });
+
+  // For track outline, use any driver that has location data
+  const driversWithData = processedDrivers.filter((d) => d.locations.length > 0);
+
+  // Store reference for animation loop consistency
+  const driversWithDataRef = useRef<ProcessedDriverData[]>([]);
+
+  // Update the reference when drivers with data changes
+  useEffect(() => {
+    driversWithDataRef.current = driversWithData;
+  }, [driversWithData]);
 
   // Calculate bounds from all GPS points
   const bounds = (() => {
@@ -101,8 +111,8 @@ export function SessionRaceVisualization({
       minY = Infinity,
       maxX = -Infinity,
       maxY = -Infinity;
-    
-    processedDrivers.forEach((driver) => {
+
+    driversWithData.forEach((driver) => {
       driver.locations.forEach((p) => {
         if (p.x < minX) minX = p.x;
         if (p.y < minY) minY = p.y;
@@ -110,7 +120,7 @@ export function SessionRaceVisualization({
         if (p.y > maxY) maxY = p.y;
       });
     });
-    
+
     return isFinite(minX) ? { minX, minY, maxX, maxY } : null;
   })();
 
@@ -183,7 +193,7 @@ export function SessionRaceVisualization({
     const cy = canvasH / 2;
     const zx = (baseX - cx) * zoom + cx + panX;
     const zy = (baseY - cy) * zoom + cy + panY;
-    
+
     return [zx, zy];
   };
 
@@ -207,10 +217,11 @@ export function SessionRaceVisualization({
 
   // Draw the track outline
   const drawTrack = (ctx: CanvasRenderingContext2D) => {
-    if (processedDrivers.length === 0) return;
-    
+    const currentDriversWithData = driversWithDataRef.current;
+    if (currentDriversWithData.length === 0) return;
+
     // Use the first driver's locations to draw the track outline
-    const trackPoints = processedDrivers[0].locations;
+    const trackPoints = currentDriversWithData[0].locations;
     if (trackPoints.length === 0) return;
 
     const z = cameraRef.current.zoom;
@@ -266,16 +277,21 @@ export function SessionRaceVisualization({
     const { locations } = driver;
     if (locations.length === 0) return null;
 
-    const targetIndex = Math.floor(progress * (locations.length - 1));
-    const nextIndex = Math.min(targetIndex + 1, locations.length - 1);
+    // Map slider progress to actual race progress
+    // Race duration (1x) should be at 75% of slider (0.75)
+    // So if slider is at 0.75, we want race progress at 1.0
+    const raceProgress = Math.min(1, progress / 0.75);
     
+    const targetIndex = Math.floor(raceProgress * (locations.length - 1));
+    const nextIndex = Math.min(targetIndex + 1, locations.length - 1);
+
     if (targetIndex >= locations.length - 1) {
       return locations[locations.length - 1];
     }
 
     const current = locations[targetIndex];
     const next = locations[nextIndex];
-    const t = (progress * (locations.length - 1)) % 1;
+    const t = (raceProgress * (locations.length - 1)) % 1;
 
     return {
       x: current.x + (next.x - current.x) * t,
@@ -293,10 +309,12 @@ export function SessionRaceVisualization({
     const labelSize = Math.round(Math.max(10, Math.min(16, 12 * (0.9 + 0.2 * z))));
     const labelOffset = Math.max(10, Math.min(18, 12 * (0.9 + 0.2 * z)));
 
-    processedDrivers.forEach((driver) => {
+    // Only draw cars for drivers that have location data
+    const currentDriversWithData = driversWithDataRef.current;
+    currentDriversWithData.forEach((driver) => {
       const pos = getCarPosition(driver, progress);
       if (!pos) return;
-      
+
       const [x, y] = worldToCanvas(pos.x, pos.y);
 
       ctx.save();
@@ -325,9 +343,11 @@ export function SessionRaceVisualization({
 
   // Draw trajectories up to current progress
   const drawTrajectories = (ctx: CanvasRenderingContext2D, progress: number) => {
-    processedDrivers.forEach((driver) => {
+    // Only draw trajectories for drivers that have location data
+    const currentDriversWithData = driversWithDataRef.current;
+    currentDriversWithData.forEach((driver) => {
       const currentIndex = Math.floor(progress * driver.locations.length);
-      
+
       ctx.save();
       ctx.strokeStyle = `#${driver.color}66`;
       ctx.lineWidth = 2;
@@ -343,7 +363,7 @@ export function SessionRaceVisualization({
           ctx.lineTo(x, y);
         }
       });
-      
+
       ctx.stroke();
       ctx.restore();
     });
@@ -383,9 +403,11 @@ export function SessionRaceVisualization({
     const deltaTime = (ts - lastTimestampRef.current) / 1000;
     lastTimestampRef.current = ts;
 
-    if (animationState.isPlaying && processedDrivers.length > 0) {
+    const currentDriversWithData = driversWithDataRef.current;
+    
+    if (animationState.isPlaying && currentDriversWithData.length > 0) {
       // Assume session duration based on available data points
-      const maxPoints = Math.max(...processedDrivers.map(d => d.locations.length));
+      const maxPoints = Math.max(...currentDriversWithData.map(d => d.locations.length));
       const sessionDuration = 60; // Assume 60 seconds for demo, adjust as needed
       const progressIncrement = (deltaTime / sessionDuration) * animationState.speed;
       const next = Math.min(1, progressRef.current + progressIncrement);
@@ -416,18 +438,28 @@ export function SessionRaceVisualization({
 
   // Start animation loop when data is ready
   useEffect(() => {
-    if (processedDrivers.length > 0) {
+    const currentDriversWithData = driversWithDataRef.current;
+    if (currentDriversWithData.length > 0) {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       animationRef.current = requestAnimationFrame(animate);
+    } else {
+      // Stop animation if no drivers have data
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+      // Still render the static view
+      render();
     }
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, [processedDrivers]);
+  }, [driversWithData]);
 
   // Restart on animation state changes
   useEffect(() => {
-    if (processedDrivers.length === 0) return;
+    const currentDriversWithData = driversWithDataRef.current;
+    if (currentDriversWithData.length === 0) return;
     if (animationRef.current) cancelAnimationFrame(animationRef.current);
     animationRef.current = requestAnimationFrame(animate);
     return () => {
@@ -514,9 +546,9 @@ export function SessionRaceVisualization({
       dragging = false;
       activePointerId = null;
       canvas.style.cursor = "grab";
-      try { 
-        canvas.releasePointerCapture(e.pointerId); 
-      } catch {}
+      try {
+        canvas.releasePointerCapture(e.pointerId);
+      } catch { }
     };
 
     const onDoubleClick = () => {
@@ -542,7 +574,28 @@ export function SessionRaceVisualization({
   }, [bounds]);
 
   function getDriverColor(driverNumber: number): string {
-    const colors = ["ED1131", "FF8000", "005AFF", "2D826D", "DC143C", "F58020"];
+    const colors = [
+      "ED1131", // Ferrari Red
+      "FF8000", // McLaren Orange
+      "005AFF", // Williams Blue
+      "2D826D", // Aston Green
+      "DC143C", // Alfa Romeo Crimson
+      "F58020", // Papaya Orange
+      "FFD700", // Renault Yellow
+      "9370DB", // Alpine Purple
+      "00CED1", // Mercedes Teal
+      "FF1493", // Pink (Force India)
+      "708090", // Haas Gray
+      "00FF7F", // Neon Green
+      "4682B4", // Steel Blue
+      "FF6347", // Tomato Red
+      "1E90FF", // Dodger Blue
+      "32CD32", // Lime Green
+      "B22222", // Firebrick
+      "A0522D", // Brown
+      "00BFFF", // Deep Sky Blue
+      "C71585"  // Medium Violet Red
+    ];
     return colors[driverNumber % colors.length];
   }
 
@@ -569,9 +622,25 @@ export function SessionRaceVisualization({
         <CardContent className="p-0 w-full h-full">
           <div className="text-center">
             <ZapIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Data Available</h3>
+            <h3 className="text-lg font-semibold mb-2">Select Drivers</h3>
             <p className="text-muted-foreground">
-              No location data available for the selected drivers.
+              Select drivers from the left panel to view their race data.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (driversWithData.length === 0) {
+    return (
+      <Card className="w-full h-[500px] lg:h-[70vh] xl:h-[80vh] flex items-center justify-center rounded-xl overflow-hidden border">
+        <CardContent className="p-0 w-full h-full">
+          <div className="text-center">
+            <ZapIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Fetch Driver Data</h3>
+            <p className="text-muted-foreground">
+              Click "Fetch" next to selected drivers to load their location data.
             </p>
           </div>
         </CardContent>
