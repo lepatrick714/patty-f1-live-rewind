@@ -2,7 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ZapIcon } from '@/app/assets/Icons';
 import { SessionDriverSelector } from '@/components/session-driver-selector';
 import { SessionRaceVisualization } from '@/components/track-visualization';
-import { TelemetryPanel } from '@/components/f1-telemetry-panels/f1-single-driver-telemetry-panel';
+import { TelemetryPanel } from '@/components/f1-telemetry-panels/TelemetryPanel';
 
 interface AnimationState {
   isPlaying: boolean;

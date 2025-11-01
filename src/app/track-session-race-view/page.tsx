@@ -6,6 +6,7 @@ import { Header, MainContent, ErrorDisplay } from './components';
 import { useDriverDataManagement } from '@/hooks/useDriverDataManagement';
 import { useAnimationState } from '@/hooks/useAnimationState';
 import { VideoControls } from './components/VideoControls';
+import { DEFAULT_ANIMATION_STATE } from '@/constants/animation';
 
 export default function TrackSessionRaceViewPage() {
   const raceStore = useRaceStore();
@@ -26,11 +27,7 @@ export default function TrackSessionRaceViewPage() {
   // Reset animation state when session changes
   useEffect(() => {
     if (raceStore.selectedSession) {
-      setAnimationState({
-        isPlaying: false,
-        progress: 0,
-        speed: 0.185, // Default to 0.185 (0.05x user speed for 3.7 Hz data)
-      });
+      setAnimationState(DEFAULT_ANIMATION_STATE);
     }
   }, [raceStore.selectedSession, setAnimationState]);
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { DEFAULT_ANIMATION_STATE } from '@/constants/animation';
 
 interface AnimationState {
   isPlaying: boolean;
@@ -9,20 +10,12 @@ interface AnimationState {
 export const useAnimationState = (
   shouldResetOnSessionChange: boolean = false
 ) => {
-  const [animationState, setAnimationState] = useState<AnimationState>({
-    isPlaying: false,
-    progress: 0,
-    speed: 0.185, // Default to 0.185 (0.05x user speed for 3.7 Hz data)
-  });
+  const [animationState, setAnimationState] = useState<AnimationState>(DEFAULT_ANIMATION_STATE);
 
   // Reset animation state when needed (e.g., session changes)
   useEffect(() => {
     if (shouldResetOnSessionChange) {
-      setAnimationState({
-        isPlaying: false,
-        progress: 0,
-        speed: 0.185, // Reset to 0.185 (0.05x user speed for 3.7 Hz data)
-      });
+      setAnimationState(DEFAULT_ANIMATION_STATE);
     }
   }, [shouldResetOnSessionChange]);
 

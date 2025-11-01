@@ -2,10 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   ZapIcon,
   PlayIcon,
-  PauseIcon,
   UserIcon,
-  ChevronUpIcon,
-  ChevronDownIcon,
 } from '@/app/assets/Icons';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -15,15 +12,15 @@ import { CarData } from '@/models';
 import {
   SpeedGauge,
   RPMGauge,
-  GearDisplay,
   ThrottleBrakeBar,
   DRSToggle,
 } from './TelemetryGauges';
+import GearDisplay from './GearDisplay';
 
 interface TelemetryPanelProps {
-  animationProgress?: number; // 0-1 for timeline sync
+  animationProgress?: number;
   isPlaying?: boolean;
-  driverData?: any[]; // Add driver data for names/colors
+  driverData?: any[];
 }
 
 export const TelemetryPanel = ({
@@ -44,7 +41,6 @@ export const TelemetryPanel = ({
 
   const [activeDriverIndex, setActiveDriverIndex] = useState(0);
 
-  // Get data for all selected drivers with additional info
   const driversData = useMemo(() => {
     return selectedDrivers.map(driverNumber => {
       const driverInfo = driverData.find(d => d.driver_number === driverNumber);
@@ -64,7 +60,6 @@ export const TelemetryPanel = ({
     driverData,
   ]);
 
-  // Reset active driver index when drivers change
   useEffect(() => {
     if (activeDriverIndex >= driversData.length) {
       setActiveDriverIndex(0);
@@ -76,11 +71,9 @@ export const TelemetryPanel = ({
   const unloadedDrivers = driversData.filter(d => !d.isLoaded && !d.isFetching);
   const fetchingDrivers = driversData.filter(d => d.isFetching);
 
-  // Calculate current data point based on animation progress and timeline
   const getCurrentDataPoint = (carData: CarData[]): CarData | null => {
     if (!carData.length || !selectedSession) return null;
 
-    // Use timeline sync if available and playing
     if (animationProgress > 0 && carData.length > 1) {
       const targetIndex = Math.floor(animationProgress * (carData.length - 1));
       return carData[targetIndex] || null;
@@ -143,17 +136,17 @@ export const TelemetryPanel = ({
   // No session selected
   if (!selectedSession) {
     return (
-      <Card className="h-full">
+      <Card className="h-full border-gray-800 bg-gradient-to-br from-gray-950 to-black">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-white">
             <ZapIcon className="h-5 w-5" />
             Live Telemetry
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="py-8 text-center">
-            <ZapIcon className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-            <p className="text-muted-foreground text-sm">
+          <div className="py-12 text-center">
+            <ZapIcon className="mx-auto mb-4 h-16 w-16 text-gray-700" />
+            <p className="text-sm text-gray-500">
               Select a session to view telemetry data
             </p>
           </div>
@@ -165,17 +158,17 @@ export const TelemetryPanel = ({
   // No drivers selected
   if (selectedDrivers.length === 0) {
     return (
-      <Card className="h-full">
+      <Card className="h-full border-gray-800 bg-gradient-to-br from-gray-950 to-black">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-white">
             <ZapIcon className="h-5 w-5" />
             Live Telemetry
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="py-8 text-center">
-            <UserIcon className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-            <p className="text-muted-foreground text-sm">
+          <div className="py-12 text-center">
+            <UserIcon className="mx-auto mb-4 h-16 w-16 text-gray-700" />
+            <p className="text-sm text-gray-500">
               Select drivers to view telemetry data
             </p>
           </div>
@@ -185,25 +178,30 @@ export const TelemetryPanel = ({
   }
 
   return (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <ZapIcon className="h-5 w-5" />
-          Live Telemetry ({driversData.length} drivers)
-          {isPlaying && (
-            <Badge variant="secondary" className="text-xs">
-              <PlayIcon className="mr-1 h-3 w-3" />
-              Synced
+    <Card className="h-full border-gray-800 bg-gradient-to-br from-gray-950 to-black">
+      <CardHeader className="border-b border-gray-800">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-3 text-white">
+            <ZapIcon className="h-5 w-5" />
+            Live Telemetry
+            <Badge variant="secondary" className="bg-gray-800 text-xs text-gray-300">
+              {driversData.length} {driversData.length === 1 ? 'driver' : 'drivers'}
             </Badge>
-          )}
-        </CardTitle>
+            {isPlaying && (
+              <Badge variant="secondary" className="bg-green-900/30 text-xs text-green-400">
+                <PlayIcon className="mr-1 h-3 w-3" />
+                Synced
+              </Badge>
+            )}
+          </CardTitle>
+        </div>
 
         {/* Bulk Actions */}
         {unloadedDrivers.length > 1 && (
           <Button
             onClick={handleFetchAllTelemetry}
             disabled={isCarDataLoading}
-            className="mt-2 w-full"
+            className="mt-3 w-full bg-blue-600 hover:bg-blue-700"
             size="sm"
           >
             <ZapIcon className="mr-2 h-4 w-4" />
@@ -213,9 +211,9 @@ export const TelemetryPanel = ({
 
         {/* Loading State */}
         {fetchingDrivers.length > 0 && (
-          <div className="mt-2 py-2 text-center">
-            <div className="border-primary mx-auto mb-2 h-6 w-6 animate-spin rounded-full border-2 border-t-transparent"></div>
-            <p className="text-muted-foreground text-xs">
+          <div className="mt-3 rounded-lg border border-gray-800 bg-gray-900/50 p-3 text-center">
+            <div className="mx-auto mb-2 h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
+            <p className="text-xs text-gray-400">
               Loading telemetry for{' '}
               {fetchingDrivers.map(d => d.driverNumber).join(', ')}...
             </p>
@@ -224,15 +222,15 @@ export const TelemetryPanel = ({
 
         {/* Error State */}
         {carDataError && (
-          <div className="mt-2 py-2 text-center">
-            <div className="text-xs text-red-500">
+          <div className="mt-3 rounded-lg border border-red-900 bg-red-950/50 p-3 text-center">
+            <div className="text-xs text-red-400">
               Error: {carDataError.message}
             </div>
             <Button
               onClick={handleFetchAllTelemetry}
               variant="outline"
               size="sm"
-              className="mt-2"
+              className="mt-2 border-red-800 hover:bg-red-900/30"
             >
               Retry
             </Button>
@@ -240,8 +238,8 @@ export const TelemetryPanel = ({
         )}
       </CardHeader>
 
-      <CardContent className="max-h-[calc(100vh-400px)] space-y-6 overflow-y-auto">
-        {/* Individual Driver Telemetry Cards */}
+      <CardContent className="max-h-[calc(100vh-400px)] space-y-6 overflow-y-auto p-6">
+        {/* F1 Style Driver Cards Grid */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
           {driversData.map(driver => {
             const currentData = getCurrentDataPoint(driver.carData);
@@ -252,6 +250,7 @@ export const TelemetryPanel = ({
                 driver={driver}
                 currentData={currentData}
                 onFetchTelemetry={handleFetchTelemetry}
+                isPlaying={isPlaying}
               />
             );
           })}
@@ -261,7 +260,6 @@ export const TelemetryPanel = ({
   );
 };
 
-// Separate component for individual driver telemetry display
 interface TelemetryDriverCardProps {
   driver: {
     driverNumber: number;
@@ -272,69 +270,143 @@ interface TelemetryDriverCardProps {
   };
   currentData: CarData | null;
   onFetchTelemetry: (driverNumber: number) => void;
+  isPlaying?: boolean;
 }
 
 const TelemetryDriverCard = ({
   driver,
   currentData,
   onFetchTelemetry,
+  isPlaying = false,
 }: TelemetryDriverCardProps) => {
   const teamColor = driver.driverInfo?.team_colour
     ? `#${driver.driverInfo.team_colour}`
     : '#3B82F6';
 
   return (
-    <Card className="relative">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center justify-between">
+    <div
+      className="relative overflow-hidden rounded-xl border-2 bg-black shadow-2xl transition-all duration-300 hover:shadow-3xl"
+      style={{
+        borderColor: driver.isLoaded ? teamColor : '#1F2937',
+        boxShadow: driver.isLoaded
+          ? `0 0 30px ${teamColor}20, 0 10px 40px rgba(0,0,0,0.5)`
+          : '0 10px 40px rgba(0,0,0,0.5)',
+      }}
+    >
+      {/* Top accent bar */}
+      <div
+        className="h-1.5"
+        style={{
+          background: driver.isLoaded
+            ? `linear-gradient(90deg, ${teamColor}, ${teamColor}80)`
+            : 'linear-gradient(90deg, #374151, #1F2937)',
+        }}
+      />
+
+      {/* Driver Header */}
+      <div className="border-b border-gray-800 bg-gradient-to-b from-gray-900/50 to-transparent p-4">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-lg font-bold">#{driver.driverNumber}</span>
-            <span className="text-base">
-              {driver.driverInfo?.name_acronym ||
-                `Driver ${driver.driverNumber}`}
-            </span>
-            {driver.carData.length > 0 && (
-              <Badge variant="secondary" className="text-xs">
-                {driver.carData.length} pts
-              </Badge>
-            )}
+            <div
+              className="flex h-12 w-12 items-center justify-center rounded-lg border-2 font-black text-white"
+              style={{
+                borderColor: teamColor,
+                backgroundColor: `${teamColor}20`,
+                boxShadow: `0 0 20px ${teamColor}30`,
+              }}
+            >
+              <span className="text-xl">{driver.driverNumber}</span>
+            </div>
+            <div>
+              <div className="text-lg font-black text-white">
+                {driver.driverInfo?.name_acronym || `DR${driver.driverNumber}`}
+              </div>
+              {driver.driverInfo?.full_name && (
+                <div className="text-xs text-gray-500">
+                  {driver.driverInfo.full_name}
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* Status Indicators */}
           <div className="flex items-center gap-2">
             {driver.isFetching && (
-              <div className="border-primary h-4 w-4 animate-spin rounded-full border border-t-transparent"></div>
+              <div
+                className="h-5 w-5 animate-spin rounded-full border-2 border-t-transparent"
+                style={{ borderColor: teamColor }}
+              />
             )}
             {!driver.isLoaded && !driver.isFetching && (
               <Button
                 onClick={() => onFetchTelemetry(driver.driverNumber)}
                 variant="outline"
                 size="sm"
-                className="h-8 px-4 text-xs"
-                style={{ borderColor: teamColor }}
+                className="h-8 border-gray-700 bg-gray-800 px-4 text-xs font-bold text-white hover:bg-gray-700"
+                style={{
+                  borderColor: teamColor,
+                }}
               >
-                Fetch
+                LOAD
               </Button>
             )}
-            {driver.isLoaded && <ZapIcon className="h-4 w-4 text-green-500" />}
+            {driver.isLoaded && (
+              <div className="flex items-center gap-1">
+                <div
+                  className="h-2 w-2 animate-pulse rounded-full"
+                  style={{ backgroundColor: teamColor }}
+                />
+                <span className="text-xs font-bold" style={{ color: teamColor }}>
+                  LIVE
+                </span>
+              </div>
+            )}
           </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pb-6 pt-0">
+        </div>
+
+        {/* Data points badge */}
+        {driver.carData.length > 0 && (
+          <div className="mt-2 flex items-center gap-2">
+            <Badge variant="secondary" className="bg-gray-800 text-[10px] text-gray-400">
+              {driver.carData.length.toLocaleString()} data points
+            </Badge>
+            {isPlaying && (
+              <Badge variant="secondary" className="bg-green-900/30 text-[10px] text-green-400">
+                SYNCED
+              </Badge>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Telemetry Display */}
+      <div className="p-6">
         {currentData ? (
           <div className="space-y-6">
-            {/* Level 1: Speed and RPM */}
-            <div className="flex justify-center gap-8">
-              <SpeedGauge speed={currentData.speed || 0} color={teamColor} />
-              <RPMGauge rpm={currentData.rpm || 0} color={teamColor} />
+            {/* Top Row: Speed & RPM Gauges */}
+            <div className="grid grid-cols-2 gap-6">
+              <div className="flex flex-col items-center">
+                <SpeedGauge speed={currentData.speed || 0} color={teamColor} />
+                <div className="mt-2 text-[10px] font-bold tracking-wider text-gray-500">
+                  SPEED (KM/H)
+                </div>
+              </div>
+              <div className="flex flex-col items-center">
+                <RPMGauge rpm={currentData.rpm || 0} color={teamColor} />
+                <div className="mt-2 text-[10px] font-bold tracking-wider text-gray-500">
+                  RPM
+                </div>
+              </div>
             </div>
 
-            {/* Level 2: Gearbox and Controls */}
+            {/* Middle Row: Gearbox & Throttle/Brake */}
             <div className="grid grid-cols-2 gap-6">
-              {/* Left Half: Gearbox */}
+              {/* Gearbox */}
               <div className="flex justify-center">
                 <GearDisplay gear={currentData.n_gear || 0} color={teamColor} />
               </div>
 
-              {/* Right Half: Throttle, Brake, DRS */}
+              {/* Throttle/Brake & DRS */}
               <div className="space-y-4">
                 <ThrottleBrakeBar
                   throttle={currentData.throttle || 0}
@@ -350,34 +422,49 @@ const TelemetryDriverCard = ({
               </div>
             </div>
 
-            {/* Data Timestamp */}
-            <div className="text-muted-foreground border-t pt-3 text-center text-xs">
-              {new Date(currentData.date).toLocaleTimeString()}
+            {/* Bottom: Timestamp */}
+            <div className="border-t border-gray-800 pt-3 text-center">
+              <div className="text-[10px] font-bold tracking-wider text-gray-600">
+                TIMESTAMP
+              </div>
+              <div className="text-xs font-mono text-gray-400">
+                {new Date(currentData.date).toLocaleTimeString()}
+              </div>
             </div>
           </div>
         ) : driver.carData.length > 0 ? (
-          <div className="py-6 text-center">
-            <ZapIcon className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
-            <p className="text-muted-foreground text-sm">
+          <div className="py-12 text-center">
+            <ZapIcon className="mx-auto mb-3 h-12 w-12 text-gray-700" />
+            <p className="text-sm text-gray-500">
               No data at current timeline position
             </p>
           </div>
         ) : driver.isLoaded ? (
-          <div className="py-6 text-center">
-            <ZapIcon className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
-            <p className="text-muted-foreground text-sm">
+          <div className="py-12 text-center">
+            <ZapIcon className="mx-auto mb-3 h-12 w-12 text-gray-700" />
+            <p className="text-sm text-gray-500">
               No telemetry data available
             </p>
           </div>
         ) : (
-          <div className="py-6 text-center">
-            <UserIcon className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
-            <p className="text-muted-foreground text-sm">
-              Click Fetch to load telemetry data
+          <div className="py-12 text-center">
+            <UserIcon className="mx-auto mb-3 h-12 w-12 text-gray-700" />
+            <p className="mb-4 text-sm text-gray-500">
+              Click LOAD to fetch telemetry data
             </p>
+            <Button
+              onClick={() => onFetchTelemetry(driver.driverNumber)}
+              className="bg-gradient-to-r from-blue-600 to-blue-700 font-bold hover:from-blue-700 hover:to-blue-800"
+              style={{
+                background: `linear-gradient(135deg, ${teamColor}, ${teamColor}dd)`,
+              }}
+            >
+              <ZapIcon className="mr-2 h-4 w-4" />
+              Load Telemetry
+            </Button>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };

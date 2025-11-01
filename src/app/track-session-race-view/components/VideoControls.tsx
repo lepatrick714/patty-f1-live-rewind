@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { PauseIcon, PlayIcon, RotateCcwIcon } from '@/app/assets/Icons';
+import { ANIMATION_SPEEDS } from '@/constants/animation';
 
 interface AnimationState {
   isPlaying: boolean;
@@ -171,20 +172,15 @@ const SpeedControls = ({
   animationState: AnimationState;
   onSpeedChange: (speed: number) => void;
 }) => {
-  // For 3.7 Hz data: adjusted for slower speeds with 0.05 default and 0.5 max
-  const DATA_RATE = 3.7;
-  const getUserSpeed = (internalSpeed: number) => internalSpeed / DATA_RATE;
-
   return (
     <div className="flex items-center gap-2">
       <div className="mr-2 text-sm text-zinc-400">
-        <div>Speed: {getUserSpeed(animationState.speed).toFixed(3)}x</div>
+        <div>Speed: {ANIMATION_SPEEDS.getUserSpeed(animationState.speed).toFixed(3)}x</div>
         <div className="text-xs opacity-75">
           ({animationState.speed.toFixed(2)}x internal)
         </div>
       </div>
-      {[0.0185, 0.037, 0.074, 0.111, 0.185, 0.37, 0.555, 0.925, 1.85].map(
-        speed => (
+      {ANIMATION_SPEEDS.SPEED_OPTIONS.map(speed => (
           <Button
             key={speed}
             variant={animationState.speed === speed ? 'default' : 'outline'}
@@ -192,7 +188,7 @@ const SpeedControls = ({
             onClick={() => onSpeedChange(speed)}
             className="w-16 border-zinc-700 bg-zinc-800 hover:bg-zinc-700"
           >
-            {getUserSpeed(speed).toFixed(3)}x
+            {ANIMATION_SPEEDS.getUserSpeed(speed).toFixed(3)}x
           </Button>
         )
       )}

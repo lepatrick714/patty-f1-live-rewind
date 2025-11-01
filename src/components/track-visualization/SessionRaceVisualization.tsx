@@ -412,11 +412,16 @@ export function SessionRaceVisualization({
     const currentDriversWithData = driversWithDataRef.current;
 
     if (animationState.isPlaying && currentDriversWithData.length > 0) {
-      // Assume session duration based on available data points
-      const maxPoints = Math.max(
-        ...currentDriversWithData.map(d => d.locations.length)
-      );
-      const sessionDuration = 60; // Assume 60 seconds for demo, adjust as needed
+      // Calculate actual session duration from data timestamps
+      const firstDriver = currentDriversWithData[0];
+      let sessionDuration = 60; // fallback
+      
+      if (firstDriver.locations.length > 1) {
+        const firstTimestamp = new Date(firstDriver.locations[0].date).getTime();
+        const lastTimestamp = new Date(firstDriver.locations[firstDriver.locations.length - 1].date).getTime();
+        sessionDuration = (lastTimestamp - firstTimestamp) / 1000; // Convert to seconds
+      }
+      
       const progressIncrement =
         (deltaTime / sessionDuration) * animationState.speed;
       const next = Math.min(1, progressRef.current + progressIncrement);
