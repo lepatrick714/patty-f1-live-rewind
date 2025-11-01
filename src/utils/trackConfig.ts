@@ -32,9 +32,8 @@ export interface TrackOptimization {
 }
 
 export const trackConfig: Record<string, TrackOptimization> = {
-
-sakhir: {
-    mirrorX: false, 
+  sakhir: {
+    mirrorX: false,
     mirrorY: true,
     rotate: 267,
     initialZoom: 1.1,
@@ -47,7 +46,6 @@ sakhir: {
     mirrorY: true,
     rotate: 315,
     initialZoom: 1.1,
-  
   },
   shanghai: {
     mirrorX: false,
@@ -75,7 +73,7 @@ sakhir: {
     extraPadding: 10,
     contentOffsetX: 0,
     contentOffsetY: 0,
-  },    
+  },
   miami: {
     mirrorX: false,
     mirrorY: true,
@@ -94,7 +92,7 @@ sakhir: {
     contentOffsetX: 0,
     contentOffsetY: 0,
   },
- monaco: {
+  monaco: {
     mirrorX: true,
     mirrorY: false,
     rotate: 220,
@@ -199,7 +197,7 @@ sakhir: {
     initialZoom: 1.1,
     extraPadding: 10,
     contentOffsetX: 0,
-    contentOffsetY: 0,  
+    contentOffsetY: 0,
   },
   'mexico city': {
     mirrorX: false,
@@ -208,7 +206,7 @@ sakhir: {
     initialZoom: 1.1,
     extraPadding: 10,
     contentOffsetX: 0,
-    contentOffsetY: 0,  
+    contentOffsetY: 0,
   },
   'são paulo': {
     mirrorX: false,
@@ -217,7 +215,7 @@ sakhir: {
     initialZoom: 1.1,
     extraPadding: 10,
     contentOffsetX: 0,
-    contentOffsetY: 0,  
+    contentOffsetY: 0,
   },
   'las vegas': {
     mirrorX: false,
@@ -226,7 +224,7 @@ sakhir: {
     initialZoom: 1.1,
     extraPadding: 10,
     contentOffsetX: 0,
-    contentOffsetY: 0,  
+    contentOffsetY: 0,
   },
   lusail: {
     mirrorX: false,
@@ -235,7 +233,7 @@ sakhir: {
     initialZoom: 1.3,
     extraPadding: 10,
     contentOffsetX: 0,
-    contentOffsetY: 0,  
+    contentOffsetY: 0,
   },
   'yas island': {
     mirrorX: true,
@@ -244,11 +242,13 @@ sakhir: {
     initialZoom: 1.1,
     extraPadding: 10,
     contentOffsetX: 0,
-    contentOffsetY: 0,  
+    contentOffsetY: 0,
   },
 };
 
-export function getTrackOptimization(rawLocation?: string | null): TrackOptimization {
+export function getTrackOptimization(
+  rawLocation?: string | null
+): TrackOptimization {
   if (!rawLocation) return {};
   const key = rawLocation.trim().toLowerCase();
   return trackConfig[key] || {};

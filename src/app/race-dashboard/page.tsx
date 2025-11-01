@@ -22,12 +22,12 @@ function RightPanel() {
 function Header() {
   return (
     <header className="border-b border-zinc-700 bg-zinc-900/50 backdrop-blur">
-      <div className="w-full px-3 py-3 sm:py-4 flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-3">
+      <div className="flex w-full flex-col justify-between gap-2 px-3 py-3 sm:py-4 md:flex-row md:items-center md:gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-bold text-white">
+          <h1 className="text-2xl font-bold text-white sm:text-3xl">
             F1 Race Analyzer
           </h1>
-          <p className="text-zinc-400 mt-1 text-sm sm:text-base">
+          <p className="mt-1 text-sm text-zinc-400 sm:text-base">
             Compare driver performance across the last 3 seasons
           </p>
         </div>
@@ -61,7 +61,6 @@ const queryClient = new QueryClient();
 export default function RaceDashboardPage() {
   return (
     <QueryClientProvider client={queryClient}>
-
       <div className="flex min-h-screen flex-col bg-zinc-950">
         {/* Header */}
         <Header />

@@ -1,11 +1,9 @@
 interface EmptyStateProps {
-    message: string;
+  message: string;
 }
 
 export const EmptyState = ({ message }: EmptyStateProps) => (
-    <div className="text-center py-8">
-        <p className="text-muted-foreground text-sm">
-            {message}
-        </p>
-    </div>
+  <div className="py-8 text-center">
+    <p className="text-muted-foreground text-sm">{message}</p>
+  </div>
 );

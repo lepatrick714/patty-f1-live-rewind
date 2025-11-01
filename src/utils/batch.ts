@@ -33,49 +33,55 @@ export async function withBatch<T, R>(
   // Process items in batches
   for (let i = 0; i < items.length; i += batchSize) {
     const batch = items.slice(i, i + batchSize);
-    
-    const batchPromises = batch.map(async (item): Promise<{ success: true; result: R } | { success: false; error: any }> => {
-      try {
-        const result = await processor(item);
-        return { success: true, result };
-      } catch (error) {
-        if (onError) {
-          onError(item, error);
+
+    const batchPromises = batch.map(
+      async (
+        item
+      ): Promise<
+        { success: true; result: R } | { success: false; error: any }
+      > => {
+        try {
+          const result = await processor(item);
+          return { success: true, result };
+        } catch (error) {
+          if (onError) {
+            onError(item, error);
+          }
+          errors.push({ item, error });
+
+          if (!continueOnError) {
+            throw error;
+          }
+
+          return { success: false, error };
         }
-        errors.push({ item, error });
-        
-        if (!continueOnError) {
-          throw error;
-        }
-        
-        return { success: false, error };
       }
-    });
-    
+    );
+
     const batchResults = await Promise.all(batchPromises);
-    
+
     // Extract successful results
     for (const result of batchResults) {
       if (result.success) {
         results.push(result.result);
       }
     }
-    
+
     // Call progress callback if provided
     if (onProgress) {
       onProgress(Math.min(i + batchSize, items.length), items.length);
     }
-    
+
     // Add delay between batches
     if (i + batchSize < items.length && delayBetweenBatches > 0) {
       await sleep(delayBetweenBatches);
     }
   }
-  
+
   if (errors.length > 0 && !continueOnError) {
     throw new Error(`Batch processing failed with ${errors.length} errors`);
   }
-  
+
   return results;
 }
 
@@ -100,48 +106,49 @@ export async function withBatchMap<T, R>(
   // Process items in batches
   for (let i = 0; i < items.length; i += batchSize) {
     const batch = items.slice(i, i + batchSize);
-    
-    const batchPromises = batch.map(async (item) => {
+
+    const batchPromises = batch.map(async item => {
       const key = keyExtractor(item);
       try {
         const result = await processor(item);
         results[key] = result;
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+
         if (onError) {
           onError(item, error);
         }
-        
+
         errors[key] = errorMessage;
-        
+
         if (!continueOnError) {
           throw error;
         }
-        
+
         // Set default value for failed items when continuing on error
         if (defaultValue !== undefined) {
           results[key] = defaultValue;
         }
       }
     });
-    
+
     await Promise.all(batchPromises);
-    
+
     // Call progress callback if provided
     if (onProgress) {
       onProgress(Math.min(i + batchSize, items.length), items.length);
     }
-    
+
     // Add delay between batches
     if (i + batchSize < items.length && delayBetweenBatches > 0) {
       await sleep(delayBetweenBatches);
     }
   }
-  
+
   if (Object.keys(errors).length > 0) {
     console.warn('Some items failed to process:', errors);
   }
-  
+
   return results;
 }

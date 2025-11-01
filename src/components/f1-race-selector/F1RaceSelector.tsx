@@ -4,10 +4,7 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { format } from 'date-fns';
-import {
-  Select,
-  SelectOption,
-} from '../ui/select';
+import { Select, SelectOption } from '../ui/select';
 import { Session } from '@/models';
 import { f1Api } from '@/api/f1Api';
 import { useRaceStore } from '@/hooks/useRaceStore';
@@ -17,7 +14,7 @@ const YEARS = [2025, 2024, 2023];
 // Year Selector Component
 function YearSelector({
   selectedYear,
-  onYearChange
+  onYearChange,
 }: {
   selectedYear: number | null;
   onYearChange: (year: string) => void;
@@ -48,7 +45,7 @@ function WeekendSelector({
   onMeetingChange,
   sortedMeetings,
   isLoading,
-  sessions
+  sessions,
 }: {
   selectedMeetingKey: number | null;
   onMeetingChange: (meetingKey: string) => void;
@@ -85,7 +82,7 @@ function SessionSelector({
   selectedSession,
   onSessionChange,
   selectedMeetingKey,
-  groupedSessions
+  groupedSessions,
 }: {
   selectedSession: Session | null;
   onSessionChange: (sessionKey: string) => void;
@@ -98,7 +95,7 @@ function SessionSelector({
         value={selectedSession?.session_key?.toString() || ''}
         onValueChange={onSessionChange}
         disabled={!selectedMeetingKey}
-        className="h-9 min-w-[200px] bg-zinc-900/50 border border-zinc-700 text-zinc-100 hover:bg-zinc-800/60 disabled:opacity-50"
+        className="h-9 min-w-[200px] border border-zinc-700 bg-zinc-900/50 text-zinc-100 hover:bg-zinc-800/60 disabled:opacity-50"
       >
         <SelectOption value="" disabled>
           Select Session
@@ -107,7 +104,8 @@ function SessionSelector({
           groupedSessions[selectedMeetingKey]?.sessions
             .sort(
               (a: any, b: any) =>
-                new Date(a.date_start).getTime() - new Date(b.date_start).getTime()
+                new Date(a.date_start).getTime() -
+                new Date(b.date_start).getTime()
             )
             .map((session: any) => (
               <SelectOption
@@ -171,7 +169,7 @@ export function F1RaceSelector() {
           new Date(a.date_start).getTime() - new Date(b.date_start).getTime()
       );
   }, [groupedSessions]);
-  
+
   const handleYearChange = (year: string) => {
     const isReset = year === '';
     const parsed = isReset ? null : parseInt(year);
@@ -194,9 +192,7 @@ export function F1RaceSelector() {
     if (sessionKey === '') return setSelectedSession(null);
 
     console.log('calling handleSessionChange with sessionKey:', sessionKey);
-    const session = sessions?.find(
-      s => s.session_key === parseInt(sessionKey)
-    );
+    const session = sessions?.find(s => s.session_key === parseInt(sessionKey));
     setSelectedSession(session ?? null);
   };
 

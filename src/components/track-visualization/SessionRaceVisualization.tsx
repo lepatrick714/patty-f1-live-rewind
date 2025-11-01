@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { getTrackOptimization } from "@/utils/trackConfig";
-import { ZapIcon } from "@/app/assets/Icons";
-import { LocationData } from "@/models";
+import { useEffect, useRef, useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { getTrackOptimization } from '@/utils/trackConfig';
+import { ZapIcon } from '@/app/assets/Icons';
+import { LocationData } from '@/models';
 
 interface GPSPoint {
   date: string;
@@ -74,16 +74,16 @@ export function SessionRaceVisualization({
   }, [animationState.progress]);
 
   // Process driver data
-  const processedDrivers: ProcessedDriverData[] = selectedDrivers
-    .map((driverNumber) => {
-      const driver = driverData.find((d) => d.driver_number === driverNumber);
+  const processedDrivers: ProcessedDriverData[] = selectedDrivers.map(
+    driverNumber => {
+      const driver = driverData.find(d => d.driver_number === driverNumber);
       const locations = locationData[driverNumber] || [];
 
       return {
         driverNumber,
         acronym: driver?.name_acronym || `#${driverNumber}`,
         name: driver?.full_name || `Driver ${driverNumber}`,
-        team: driver?.team_name || "Unknown",
+        team: driver?.team_name || 'Unknown',
         color: driver?.team_colour || getDriverColor(driverNumber),
         locations: locations.map(loc => ({
           date: loc.date,
@@ -92,10 +92,11 @@ export function SessionRaceVisualization({
           z: loc.z || 0,
         })),
       };
-    });
+    }
+  );
 
   // For track outline, use any driver that has location data
-  const driversWithData = processedDrivers.filter((d) => d.locations.length > 0);
+  const driversWithData = processedDrivers.filter(d => d.locations.length > 0);
 
   // Store reference for animation loop consistency
   const driversWithDataRef = useRef<ProcessedDriverData[]>([]);
@@ -112,8 +113,8 @@ export function SessionRaceVisualization({
       maxX = -Infinity,
       maxY = -Infinity;
 
-    driversWithData.forEach((driver) => {
-      driver.locations.forEach((p) => {
+    driversWithData.forEach(driver => {
+      driver.locations.forEach(p => {
         if (p.x < minX) minX = p.x;
         if (p.y < minY) minY = p.y;
         if (p.x > maxX) maxX = p.x;
@@ -176,8 +177,8 @@ export function SessionRaceVisualization({
     const yRot = rx * sinA + ry * cosA;
 
     // Scale
-    let sx = xRot * scale;
-    let sy = yRot * scale;
+    const sx = xRot * scale;
+    const sy = yRot * scale;
 
     // Position in canvas
     let baseX = canvasW / 2 + sx;
@@ -201,12 +202,12 @@ export function SessionRaceVisualization({
   const setupCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext('2d');
     if (!ctx) return null;
 
     const dpr = Math.min(
       2,
-      typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1
+      typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1
     );
     const rect = canvas.getBoundingClientRect();
     canvas.width = rect.width * dpr;
@@ -231,11 +232,11 @@ export function SessionRaceVisualization({
     const dashLen = 8 * Math.max(0.6, Math.min(1.8, z));
 
     ctx.save();
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
 
     // Track background
-    ctx.strokeStyle = "#374151";
+    ctx.strokeStyle = '#374151';
     ctx.lineWidth = bgWidth;
     ctx.beginPath();
     trackPoints.forEach((p, i) => {
@@ -246,7 +247,7 @@ export function SessionRaceVisualization({
     ctx.stroke();
 
     // Track surface
-    ctx.strokeStyle = "#4b5563";
+    ctx.strokeStyle = '#4b5563';
     ctx.lineWidth = fgWidth;
     ctx.beginPath();
     trackPoints.forEach((p, i) => {
@@ -259,7 +260,7 @@ export function SessionRaceVisualization({
     // Start/finish line
     if (trackPoints.length > 0) {
       const [sx, sy] = worldToCanvas(trackPoints[0].x, trackPoints[0].y);
-      ctx.strokeStyle = "#ffffff";
+      ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = sfWidth;
       ctx.setLineDash([dashLen, dashLen]);
       ctx.beginPath();
@@ -281,7 +282,7 @@ export function SessionRaceVisualization({
     // Race duration (1x) should be at 75% of slider (0.75)
     // So if slider is at 0.75, we want race progress at 1.0
     const raceProgress = Math.min(1, progress / 0.75);
-    
+
     const targetIndex = Math.floor(raceProgress * (locations.length - 1));
     const nextIndex = Math.min(targetIndex + 1, locations.length - 1);
 
@@ -306,12 +307,14 @@ export function SessionRaceVisualization({
     const z = cameraRef.current.zoom;
     const radius = Math.max(4, Math.min(16, 8 * z));
     const outline = Math.max(1, Math.min(3, 2 * z));
-    const labelSize = Math.round(Math.max(10, Math.min(16, 12 * (0.9 + 0.2 * z))));
+    const labelSize = Math.round(
+      Math.max(10, Math.min(16, 12 * (0.9 + 0.2 * z)))
+    );
     const labelOffset = Math.max(10, Math.min(18, 12 * (0.9 + 0.2 * z)));
 
     // Only draw cars for drivers that have location data
     const currentDriversWithData = driversWithDataRef.current;
-    currentDriversWithData.forEach((driver) => {
+    currentDriversWithData.forEach(driver => {
       const pos = getCarPosition(driver, progress);
       if (!pos) return;
 
@@ -326,15 +329,15 @@ export function SessionRaceVisualization({
       ctx.fill();
 
       // Outline
-      ctx.strokeStyle = "#ffffff";
+      ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = outline;
       ctx.stroke();
 
       // Label
       ctx.font = `600 ${labelSize}px ui-sans-serif, system-ui`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "bottom";
-      ctx.fillStyle = "#ffffffde";
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillStyle = '#ffffffde';
       ctx.fillText(driver.acronym, x, y - labelOffset);
 
       ctx.restore();
@@ -342,10 +345,13 @@ export function SessionRaceVisualization({
   };
 
   // Draw trajectories up to current progress
-  const drawTrajectories = (ctx: CanvasRenderingContext2D, progress: number) => {
+  const drawTrajectories = (
+    ctx: CanvasRenderingContext2D,
+    progress: number
+  ) => {
     // Only draw trajectories for drivers that have location data
     const currentDriversWithData = driversWithDataRef.current;
-    currentDriversWithData.forEach((driver) => {
+    currentDriversWithData.forEach(driver => {
       const currentIndex = Math.floor(progress * driver.locations.length);
 
       ctx.save();
@@ -354,7 +360,7 @@ export function SessionRaceVisualization({
       ctx.beginPath();
 
       let started = false;
-      driver.locations.slice(0, currentIndex + 1).forEach((p) => {
+      driver.locations.slice(0, currentIndex + 1).forEach(p => {
         const [x, y] = worldToCanvas(p.x, p.y);
         if (!started) {
           ctx.moveTo(x, y);
@@ -382,7 +388,7 @@ export function SessionRaceVisualization({
     // Draw grid
     ctx.save();
     ctx.globalAlpha = 0.06;
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = '#ffffff';
     for (let i = 0; i < rect.width; i += 50) {
       ctx.fillRect(i, 0, 1, rect.height);
     }
@@ -404,12 +410,15 @@ export function SessionRaceVisualization({
     lastTimestampRef.current = ts;
 
     const currentDriversWithData = driversWithDataRef.current;
-    
+
     if (animationState.isPlaying && currentDriversWithData.length > 0) {
       // Assume session duration based on available data points
-      const maxPoints = Math.max(...currentDriversWithData.map(d => d.locations.length));
+      const maxPoints = Math.max(
+        ...currentDriversWithData.map(d => d.locations.length)
+      );
       const sessionDuration = 60; // Assume 60 seconds for demo, adjust as needed
-      const progressIncrement = (deltaTime / sessionDuration) * animationState.speed;
+      const progressIncrement =
+        (deltaTime / sessionDuration) * animationState.speed;
       const next = Math.min(1, progressRef.current + progressIncrement);
       progressRef.current = next;
 
@@ -482,8 +491,8 @@ export function SessionRaceVisualization({
   // Handle resize
   useEffect(() => {
     const handleResize = () => render();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   // Camera controls (zoom and pan)
@@ -492,7 +501,8 @@ export function SessionRaceVisualization({
     if (!canvas) return;
 
     let dragging = false;
-    let lastX = 0, lastY = 0;
+    let lastX = 0,
+      lastY = 0;
     let activePointerId: number | null = null;
 
     const onWheel = (e: WheelEvent) => {
@@ -526,7 +536,7 @@ export function SessionRaceVisualization({
       activePointerId = e.pointerId;
       lastX = e.clientX;
       lastY = e.clientY;
-      canvas.style.cursor = "grabbing";
+      canvas.style.cursor = 'grabbing';
       canvas.setPointerCapture(e.pointerId);
     };
 
@@ -545,68 +555,68 @@ export function SessionRaceVisualization({
       if (e.pointerId !== activePointerId) return;
       dragging = false;
       activePointerId = null;
-      canvas.style.cursor = "grab";
+      canvas.style.cursor = 'grab';
       try {
         canvas.releasePointerCapture(e.pointerId);
-      } catch { }
+      } catch {}
     };
 
     const onDoubleClick = () => {
       cameraRef.current = { zoom: 1, panX: 0, panY: 0 };
     };
 
-    canvas.style.cursor = "grab";
-    canvas.addEventListener("wheel", onWheel, { passive: false });
-    canvas.addEventListener("pointerdown", onPointerDown);
-    canvas.addEventListener("pointermove", onPointerMove);
-    canvas.addEventListener("pointerup", onPointerUpOrCancel);
-    canvas.addEventListener("pointercancel", onPointerUpOrCancel);
-    canvas.addEventListener("dblclick", onDoubleClick);
+    canvas.style.cursor = 'grab';
+    canvas.addEventListener('wheel', onWheel, { passive: false });
+    canvas.addEventListener('pointerdown', onPointerDown);
+    canvas.addEventListener('pointermove', onPointerMove);
+    canvas.addEventListener('pointerup', onPointerUpOrCancel);
+    canvas.addEventListener('pointercancel', onPointerUpOrCancel);
+    canvas.addEventListener('dblclick', onDoubleClick);
 
     return () => {
-      canvas.removeEventListener("wheel", onWheel);
-      canvas.removeEventListener("pointerdown", onPointerDown);
-      canvas.removeEventListener("pointermove", onPointerMove);
-      canvas.removeEventListener("pointerup", onPointerUpOrCancel);
-      canvas.removeEventListener("pointercancel", onPointerUpOrCancel);
-      canvas.removeEventListener("dblclick", onDoubleClick);
+      canvas.removeEventListener('wheel', onWheel);
+      canvas.removeEventListener('pointerdown', onPointerDown);
+      canvas.removeEventListener('pointermove', onPointerMove);
+      canvas.removeEventListener('pointerup', onPointerUpOrCancel);
+      canvas.removeEventListener('pointercancel', onPointerUpOrCancel);
+      canvas.removeEventListener('dblclick', onDoubleClick);
     };
   }, [bounds]);
 
   function getDriverColor(driverNumber: number): string {
     const colors = [
-      "ED1131", // Ferrari Red
-      "FF8000", // McLaren Orange
-      "005AFF", // Williams Blue
-      "2D826D", // Aston Green
-      "DC143C", // Alfa Romeo Crimson
-      "F58020", // Papaya Orange
-      "FFD700", // Renault Yellow
-      "9370DB", // Alpine Purple
-      "00CED1", // Mercedes Teal
-      "FF1493", // Pink (Force India)
-      "708090", // Haas Gray
-      "00FF7F", // Neon Green
-      "4682B4", // Steel Blue
-      "FF6347", // Tomato Red
-      "1E90FF", // Dodger Blue
-      "32CD32", // Lime Green
-      "B22222", // Firebrick
-      "A0522D", // Brown
-      "00BFFF", // Deep Sky Blue
-      "C71585"  // Medium Violet Red
+      'ED1131', // Ferrari Red
+      'FF8000', // McLaren Orange
+      '005AFF', // Williams Blue
+      '2D826D', // Aston Green
+      'DC143C', // Alfa Romeo Crimson
+      'F58020', // Papaya Orange
+      'FFD700', // Renault Yellow
+      '9370DB', // Alpine Purple
+      '00CED1', // Mercedes Teal
+      'FF1493', // Pink (Force India)
+      '708090', // Haas Gray
+      '00FF7F', // Neon Green
+      '4682B4', // Steel Blue
+      'FF6347', // Tomato Red
+      '1E90FF', // Dodger Blue
+      '32CD32', // Lime Green
+      'B22222', // Firebrick
+      'A0522D', // Brown
+      '00BFFF', // Deep Sky Blue
+      'C71585', // Medium Violet Red
     ];
     return colors[driverNumber % colors.length];
   }
 
   if (isLoading) {
     return (
-      <Card className="w-full h-[500px] lg:h-[70vh] xl:h-[80vh] flex items-center justify-center rounded-xl overflow-hidden border">
-        <CardContent className="p-0 w-full h-full">
-          <div className="h-full flex items-center justify-center">
-            <div className="text-center space-y-2">
-              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-              <p className="text-sm text-muted-foreground">
+      <Card className="flex h-[500px] w-full items-center justify-center overflow-hidden rounded-xl border lg:h-[70vh] xl:h-[80vh]">
+        <CardContent className="h-full w-full p-0">
+          <div className="flex h-full items-center justify-center">
+            <div className="space-y-2 text-center">
+              <div className="border-primary mx-auto h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" />
+              <p className="text-muted-foreground text-sm">
                 Loading session data...
               </p>
             </div>
@@ -618,11 +628,11 @@ export function SessionRaceVisualization({
 
   if (processedDrivers.length === 0) {
     return (
-      <Card className="w-full h-[500px] lg:h-[70vh] xl:h-[80vh] flex items-center justify-center rounded-xl overflow-hidden border">
-        <CardContent className="p-0 w-full h-full">
+      <Card className="flex h-[500px] w-full items-center justify-center overflow-hidden rounded-xl border lg:h-[70vh] xl:h-[80vh]">
+        <CardContent className="h-full w-full p-0">
           <div className="text-center">
-            <ZapIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Select Drivers</h3>
+            <ZapIcon className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+            <h3 className="mb-2 text-lg font-semibold">Select Drivers</h3>
             <p className="text-muted-foreground">
               Select drivers from the left panel to view their race data.
             </p>
@@ -634,13 +644,14 @@ export function SessionRaceVisualization({
 
   if (driversWithData.length === 0) {
     return (
-      <Card className="w-full h-[500px] lg:h-[70vh] xl:h-[80vh] flex items-center justify-center rounded-xl overflow-hidden border">
-        <CardContent className="p-0 w-full h-full">
+      <Card className="flex h-[500px] w-full items-center justify-center overflow-hidden rounded-xl border lg:h-[70vh] xl:h-[80vh]">
+        <CardContent className="h-full w-full p-0">
           <div className="text-center">
-            <ZapIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Fetch Driver Data</h3>
+            <ZapIcon className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+            <h3 className="mb-2 text-lg font-semibold">Fetch Driver Data</h3>
             <p className="text-muted-foreground">
-              Click "Fetch" next to selected drivers to load their location data.
+              Click "Fetch" next to selected drivers to load their location
+              data.
             </p>
           </div>
         </CardContent>
@@ -649,16 +660,16 @@ export function SessionRaceVisualization({
   }
 
   return (
-    <Card className="rounded-xl overflow-hidden border w-full h-[500px] lg:h-[70vh] xl:h-[80vh]">
-      <CardContent className="p-0 h-full">
+    <Card className="h-[500px] w-full overflow-hidden rounded-xl border lg:h-[70vh] xl:h-[80vh]">
+      <CardContent className="h-full p-0">
         <div className="relative h-full">
           <canvas
             ref={canvasRef}
-            className="w-full h-full"
+            className="h-full w-full"
             style={{
-              imageRendering: "auto",
-              touchAction: "none",
-              background: "#0f0f12",
+              imageRendering: 'auto',
+              touchAction: 'none',
+              background: '#0f0f12',
             }}
           />
         </div>

@@ -1,16 +1,21 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import { f1Api } from "@/api/f1Api";
-import { useRaceStore } from "@/hooks/useRaceStore";
-import { calculateFastestLap } from "@/utils/lapCalculator";
-import { getTrackOptimization } from "@/utils/trackConfig";
-import { PauseIcon, PlayIcon, RotateCcwIcon, ZapIcon } from "@/app/assets/Icons";
-import { TrackPlayerControlsPanel } from "./TrackPlayerControlsPanel";
+import { useEffect, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
+import { f1Api } from '@/api/f1Api';
+import { useRaceStore } from '@/hooks/useRaceStore';
+import { calculateFastestLap } from '@/utils/lapCalculator';
+import { getTrackOptimization } from '@/utils/trackConfig';
+import {
+  PauseIcon,
+  PlayIcon,
+  RotateCcwIcon,
+  ZapIcon,
+} from '@/app/assets/Icons';
+import { TrackPlayerControlsPanel } from './TrackPlayerControlsPanel';
 
 interface AnimationState {
   isPlaying: boolean;
@@ -54,7 +59,7 @@ interface TrackVisualizationProps {
   isLoading?: boolean;
 }
 
-export function TrackVisualization({ }: TrackVisualizationProps) {
+export function TrackVisualization({}: TrackVisualizationProps) {
   const { selectedSession, selectedDrivers } = useRaceStore();
 
   // CAMERA (zoom + pan)
@@ -63,7 +68,7 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
   const MAX_ZOOM = 6;
 
   const { data: driverData = [], isLoading: isDriversLoading } = useQuery({
-    queryKey: ["drivers", selectedSession?.session_key],
+    queryKey: ['drivers', selectedSession?.session_key],
     queryFn: () =>
       selectedSession
         ? f1Api.getDrivers(selectedSession.session_key)
@@ -72,11 +77,11 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
   });
 
   const { data: allLapData = {}, isLoading: isLapsLoading } = useQuery({
-    queryKey: ["laps", selectedSession?.session_key, selectedDrivers],
+    queryKey: ['laps', selectedSession?.session_key, selectedDrivers],
     queryFn: async () => {
       if (!selectedSession || selectedDrivers.length === 0)
         return {} as Record<number, any[]>;
-      const lapPromises = selectedDrivers.map(async (driverNumber) => {
+      const lapPromises = selectedDrivers.map(async driverNumber => {
         const laps = await f1Api.getLaps(
           selectedSession.session_key,
           driverNumber
@@ -84,10 +89,13 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
         return { driverNumber, laps };
       });
       const results = await Promise.all(lapPromises);
-      return results.reduce((acc, { driverNumber, laps }) => {
-        acc[driverNumber] = laps;
-        return acc;
-      }, {} as Record<number, any[]>);
+      return results.reduce(
+        (acc, { driverNumber, laps }) => {
+          acc[driverNumber] = laps;
+          return acc;
+        },
+        {} as Record<number, any[]>
+      );
     },
     enabled: !!(selectedSession && selectedDrivers.length > 0),
   });
@@ -96,7 +104,7 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
     Record<number, GPSPoint[]>
   >({
     queryKey: [
-      "locations",
+      'locations',
       selectedSession?.session_key,
       selectedDrivers,
       allLapData,
@@ -107,7 +115,7 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
 
       // Compute each driver's fastest lap info from provided laps
       const perDriverFastest = selectedDrivers
-        .map((driverNumber) => {
+        .map(driverNumber => {
           const laps = (allLapData as Record<number, any[]>)[driverNumber];
           if (!laps || laps.length === 0)
             return { driverNumber, error: true } as const;
@@ -118,10 +126,10 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
             return { driverNumber, error: true } as const;
           }
         })
-        .filter((d) => !("error" in d)) as Array<{
-          driverNumber: number;
-          fastest: { lapTime: number; startTime: string; endTime: string };
-        }>;
+        .filter(d => !('error' in d)) as Array<{
+        driverNumber: number;
+        fastest: { lapTime: number; startTime: string; endTime: string };
+      }>;
 
       if (perDriverFastest.length === 0)
         return {} as Record<number, GPSPoint[]>;
@@ -141,40 +149,46 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
           fastestDriverEntry.fastest.endTime
         );
         const start = pts[0]?.date ? new Date(pts[0].date).getTime() : 0;
-        fastestPoints = pts.map((p) => ({
+        fastestPoints = pts.map(p => ({
           ...p,
           elapsed: start ? (new Date(p.date).getTime() - start) / 1000 : 0,
         }));
       } catch (e) {
-        console.error("location fetch failed for fastest driver", e);
+        console.error('location fetch failed for fastest driver', e);
         // return empty mappings
-        return selectedDrivers.reduce((acc, dn) => {
-          acc[dn] = [] as GPSPoint[];
-          return acc;
-        }, {} as Record<number, GPSPoint[]>);
+        return selectedDrivers.reduce(
+          (acc, dn) => {
+            acc[dn] = [] as GPSPoint[];
+            return acc;
+          },
+          {} as Record<number, GPSPoint[]>
+        );
       }
 
       // Set the master lap time (seconds) to the slowest lap time among selected drivers
       // so the timeline runs until the slowest driver completes their lap. Fastest
       // drivers will reach their end earlier and remain at the finish line.
       const slowestLapTime = Math.max(
-        ...perDriverFastest.map((d) => d.fastest.lapTime)
+        ...perDriverFastest.map(d => d.fastest.lapTime)
       );
       masterLapTimeRef.current = slowestLapTime;
 
       // For each driver, return the same spatial points (no per-point scaling).
       // We'll use each driver's lapDuration for pacing when rendering.
-      const result = selectedDrivers.reduce((acc, driverNumber) => {
-        const entry = perDriverFastest.find(
-          (d) => d.driverNumber === driverNumber
-        );
-        if (!entry) {
-          acc[driverNumber] = [];
+      const result = selectedDrivers.reduce(
+        (acc, driverNumber) => {
+          const entry = perDriverFastest.find(
+            d => d.driverNumber === driverNumber
+          );
+          if (!entry) {
+            acc[driverNumber] = [];
+            return acc;
+          }
+          acc[driverNumber] = fastestPoints;
           return acc;
-        }
-        acc[driverNumber] = fastestPoints;
-        return acc;
-      }, {} as Record<number, GPSPoint[]>);
+        },
+        {} as Record<number, GPSPoint[]>
+      );
 
       return result as Record<number, GPSPoint[]>;
     },
@@ -205,8 +219,8 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
 
   // Process driver data
   const processedDrivers: ProcessedDriverData[] = selectedDrivers
-    .map((driverNumber) => {
-      const driver = driverData.find((d) => d.driver_number === driverNumber);
+    .map(driverNumber => {
+      const driver = driverData.find(d => d.driver_number === driverNumber);
       const locations =
         (locationData as Record<number, GPSPoint[]>)[driverNumber] || [];
       // determine lapDuration (seconds) from provided lap data if available
@@ -231,13 +245,13 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
         driverNumber,
         acronym: driver?.name_acronym || `#${driverNumber}`,
         name: driver?.full_name || `Driver ${driverNumber}`,
-        team: driver?.team_name || "Unknown",
+        team: driver?.team_name || 'Unknown',
         color: driver?.team_colour || getDriverColor(driverNumber),
         locations,
         lapDuration,
       };
     })
-    .filter((d) => d.locations.length > 0);
+    .filter(d => d.locations.length > 0);
 
   // Bounds from GPS points
   const bounds = (() => {
@@ -245,8 +259,8 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
       minY = Infinity,
       maxX = -Infinity,
       maxY = -Infinity;
-    processedDrivers.forEach((driver) => {
-      driver.locations.forEach((p) => {
+    processedDrivers.forEach(driver => {
+      driver.locations.forEach(p => {
         if (p.x < minX) minX = p.x;
         if (p.y < minY) minY = p.y;
         if (p.x > maxX) maxX = p.x;
@@ -310,8 +324,8 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
     const yRot = rx * sinA + ry * cosA;
 
     // Scale
-    let sx = xRot * scale;
-    let sy = yRot * scale;
+    const sx = xRot * scale;
+    const sy = yRot * scale;
 
     // Position: center in canvas (guarantees padding margins because scale used oriented extents)
     let baseX = canvasW / 2 + sx;
@@ -334,12 +348,12 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
   const setupCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext('2d');
     if (!ctx) return null;
 
     const dpr = Math.min(
       2,
-      typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1
+      typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1
     );
     const rect = canvas.getBoundingClientRect();
     canvas.width = rect.width * dpr;
@@ -361,11 +375,11 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
     const dashLen = 8 * Math.max(0.6, Math.min(1.8, z)); // scale dash a bit
 
     ctx.save();
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
 
     // Track background
-    ctx.strokeStyle = "#374151";
+    ctx.strokeStyle = '#374151';
     ctx.lineWidth = bgWidth;
     ctx.beginPath();
     trackPoints.forEach((p, i) => {
@@ -376,7 +390,7 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
     ctx.stroke();
 
     // Track surface
-    ctx.strokeStyle = "#4b5563";
+    ctx.strokeStyle = '#4b5563';
     ctx.lineWidth = fgWidth;
     ctx.beginPath();
     trackPoints.forEach((p, i) => {
@@ -389,7 +403,7 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
     // Start/finish
     if (trackPoints.length > 0) {
       const [sx, sy] = worldToCanvas(trackPoints[0].x, trackPoints[0].y);
-      ctx.strokeStyle = "#ffffff";
+      ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = sfWidth;
       ctx.setLineDash([dashLen, dashLen]);
       ctx.beginPath();
@@ -409,7 +423,7 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
 
     // master lap time (seconds)
     const masterLap =
-      masterLapTimeRef.current ?? Math.max(...locations.map((l) => l.elapsed));
+      masterLapTimeRef.current ?? Math.max(...locations.map(l => l.elapsed));
     // elapsed time along master timeline
     const masterElapsed = progress * masterLap;
 
@@ -420,7 +434,7 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
         : Math.min(1, progress);
 
     // map driverFrac back to fastestPoints elapsed (which are based on fastest lap)
-    const fastestMax = Math.max(...locations.map((l) => l.elapsed));
+    const fastestMax = Math.max(...locations.map(l => l.elapsed));
     const targetTime = driverFrac * fastestMax;
 
     for (let i = 0; i < locations.length - 1; i++) {
@@ -449,7 +463,7 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
     const labelOffset = Math.max(10, Math.min(18, 12 * (0.9 + 0.2 * z)));
 
     //const posMap: Record<number, { x: number; y: number; elapsed: number }> = {};
-    processedDrivers.forEach((driver) => {
+    processedDrivers.forEach(driver => {
       const pos = getCarPosition(driver, progress);
       if (!pos) return;
       const [x, y] = worldToCanvas(pos.x, pos.y);
@@ -464,15 +478,15 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
       ctx.fill();
 
       // outline
-      ctx.strokeStyle = "#ffffff";
+      ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = outline;
       ctx.stroke();
 
       // label
       ctx.font = `600 ${labelSize}px ui-sans-serif, system-ui`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "bottom";
-      ctx.fillStyle = "#ffffffde";
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillStyle = '#ffffffde';
       ctx.fillText(driver.acronym, x, y - labelOffset);
 
       ctx.restore();
@@ -491,8 +505,8 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
     const masterLap = masterLapTimeRef.current ?? 0;
     const masterElapsed = progress * masterLap;
 
-    processedDrivers.forEach((driver) => {
-      const fastestMax = Math.max(...driver.locations.map((l) => l.elapsed));
+    processedDrivers.forEach(driver => {
+      const fastestMax = Math.max(...driver.locations.map(l => l.elapsed));
       const driverFrac =
         driver.lapDuration > 0
           ? Math.min(1, masterElapsed / driver.lapDuration)
@@ -505,7 +519,7 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
       ctx.beginPath();
 
       let started = false;
-      driver.locations.forEach((p) => {
+      driver.locations.forEach(p => {
         if (p.elapsed <= currentTime) {
           const [x, y] = worldToCanvas(p.x, p.y);
           if (!started) {
@@ -534,7 +548,7 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
     // grid
     ctx.save();
     ctx.globalAlpha = 0.06;
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = '#ffffff';
     for (let i = 0; i < rect.width; i += 50) ctx.fillRect(i, 0, 1, rect.height);
     for (let j = 0; j < rect.height; j += 50) ctx.fillRect(0, j, rect.width, 1);
     ctx.restore();
@@ -555,7 +569,7 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
       // use master (slowest) lap time as canonical timeline; fallback to max driver lap
       const master =
         masterLapTimeRef.current ??
-        Math.max(...processedDrivers.map((d) => d.lapDuration));
+        Math.max(...processedDrivers.map(d => d.lapDuration));
       const denom = Math.max(master, 0.0001);
       const progressIncrement = (deltaTime / denom) * animationState.speed;
       const next = Math.min(1, progressRef.current + progressIncrement);
@@ -565,7 +579,7 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
       // Lightly sync local UI state (slider) at ~6-10 fps to avoid re-render every frame
       if (ts - lastUIUpdateRef.current > 150) {
         lastUIUpdateRef.current = ts;
-        setAnimationState((prev) => ({
+        setAnimationState(prev => ({
           ...prev,
           progress: progressRef.current,
         }));
@@ -573,7 +587,7 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
       if (next >= 1) {
         // Stop at end of slowest lap and snap progress to 1.0 for UI consumerss
         progressRef.current = 1;
-        setAnimationState((prev) => ({
+        setAnimationState(prev => ({
           ...prev,
           isPlaying: false,
           progress: 1,
@@ -614,7 +628,7 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
   useEffect(() => {
     if (processedDrivers.length > 0 && !animationState.isPlaying) {
       progressRef.current = 0;
-      setAnimationState((p) => ({ ...p, isPlaying: true, progress: 0 }));
+      setAnimationState(p => ({ ...p, isPlaying: true, progress: 0 }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [processedDrivers.length]);
@@ -640,8 +654,8 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
   // Resize
   useEffect(() => {
     const handleResize = () => render();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   // === ZOOM + PAN handlers ===
@@ -688,7 +702,7 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
       activePointerId = e.pointerId;
       lastX = e.clientX;
       lastY = e.clientY;
-      canvas.style.cursor = "grabbing";
+      canvas.style.cursor = 'grabbing';
       canvas.setPointerCapture(e.pointerId);
     };
 
@@ -710,8 +724,10 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
       if (e.pointerId !== activePointerId) return;
       dragging = false;
       activePointerId = null;
-      canvas.style.cursor = "grab";
-      try { canvas.releasePointerCapture(e.pointerId); } catch { }
+      canvas.style.cursor = 'grab';
+      try {
+        canvas.releasePointerCapture(e.pointerId);
+      } catch {}
     };
 
     const onDoubleClick = () => {
@@ -719,40 +735,40 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
       // no render() — RAF will repaint
     };
 
-    canvas.style.cursor = "grab";
-    canvas.addEventListener("wheel", onWheel, { passive: false });
-    canvas.addEventListener("pointerdown", onPointerDown);
-    canvas.addEventListener("pointermove", onPointerMove);
-    canvas.addEventListener("pointerup", onPointerUpOrCancel);
-    canvas.addEventListener("pointercancel", onPointerUpOrCancel);
-    canvas.addEventListener("dblclick", onDoubleClick);
+    canvas.style.cursor = 'grab';
+    canvas.addEventListener('wheel', onWheel, { passive: false });
+    canvas.addEventListener('pointerdown', onPointerDown);
+    canvas.addEventListener('pointermove', onPointerMove);
+    canvas.addEventListener('pointerup', onPointerUpOrCancel);
+    canvas.addEventListener('pointercancel', onPointerUpOrCancel);
+    canvas.addEventListener('dblclick', onDoubleClick);
 
     return () => {
-      canvas.removeEventListener("wheel", onWheel);
-      canvas.removeEventListener("pointerdown", onPointerDown);
-      canvas.removeEventListener("pointermove", onPointerMove);
-      canvas.removeEventListener("pointerup", onPointerUpOrCancel);
-      canvas.removeEventListener("pointercancel", onPointerUpOrCancel);
-      canvas.removeEventListener("dblclick", onDoubleClick);
+      canvas.removeEventListener('wheel', onWheel);
+      canvas.removeEventListener('pointerdown', onPointerDown);
+      canvas.removeEventListener('pointermove', onPointerMove);
+      canvas.removeEventListener('pointerup', onPointerUpOrCancel);
+      canvas.removeEventListener('pointercancel', onPointerUpOrCancel);
+      canvas.removeEventListener('dblclick', onDoubleClick);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [bounds]);
 
   function getDriverColor(driverNumber: number): string {
-    const colors = ["ED1131", "FF8000", "005AFF", "2D826D", "DC143C", "F58020"];
+    const colors = ['ED1131', 'FF8000', '005AFF', '2D826D', 'DC143C', 'F58020'];
     return colors[driverNumber % colors.length];
   }
 
   if (!selectedSession) {
     return (
       <Card
-        className="w-full h-[500px] lg:h-[70vh] xl:h-[80vh] flex items-center justify-center rounded-xl overflow-hidden border"
-        style={{ background: "#0f0f12", borderColor: "#222" }}
+        className="flex h-[500px] w-full items-center justify-center overflow-hidden rounded-xl border lg:h-[70vh] xl:h-[80vh]"
+        style={{ background: '#0f0f12', borderColor: '#222' }}
       >
-        <CardContent className="p-0 w-full h-full">
+        <CardContent className="h-full w-full p-0">
           <div className="text-center">
-            <ZapIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Ready to Analyze</h3>
+            <ZapIcon className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+            <h3 className="mb-2 text-lg font-semibold">Ready to Analyze</h3>
             <p className="text-muted-foreground">
               Select a race session and drivers to view the track visualization.
             </p>
@@ -765,13 +781,13 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
   if (selectedDrivers.length === 0) {
     return (
       <Card
-        className="w-full h-[500px] lg:h-[70vh] xl:h-[80vh] flex items-center justify-center rounded-xl overflow-hidden border"
-        style={{ background: "#0f0f12", borderColor: "#222" }}
+        className="flex h-[500px] w-full items-center justify-center overflow-hidden rounded-xl border lg:h-[70vh] xl:h-[80vh]"
+        style={{ background: '#0f0f12', borderColor: '#222' }}
       >
-        <CardContent className="p-0 w-full h-full">
+        <CardContent className="h-full w-full p-0">
           <div className="text-center">
-            <ZapIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Select Drivers</h3>
+            <ZapIcon className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+            <h3 className="mb-2 text-lg font-semibold">Select Drivers</h3>
             <p className="text-muted-foreground">
               Choose drivers to compare on the track visualization.
             </p>
@@ -783,21 +799,21 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
 
   return (
     <Card
-      className="rounded-xl overflow-hidden border w-full h-[500px] lg:h-[70vh] xl:h-[80vh] flex flex-col py-0"
-      style={{ background: "#0f0f12", borderColor: "#222" }}
+      className="flex h-[500px] w-full flex-col overflow-hidden rounded-xl border py-0 lg:h-[70vh] xl:h-[80vh]"
+      style={{ background: '#0f0f12', borderColor: '#222' }}
     >
-      <CardContent className="p-0 flex-1">
+      <CardContent className="flex-1 p-0">
         {isLoading ? (
-          <div className="h-full flex items-center justify-center bg-muted/20 rounded-lg">
-            <div className="text-center space-y-2">
-              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-              <p className="text-sm text-muted-foreground">
+          <div className="bg-muted/20 flex h-full items-center justify-center rounded-lg">
+            <div className="space-y-2 text-center">
+              <div className="border-primary mx-auto h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" />
+              <p className="text-muted-foreground text-sm">
                 Loading track data...
               </p>
             </div>
           </div>
         ) : processedDrivers.length === 0 ? (
-          <div className="h-full flex items-center justify-center bg-muted/20 rounded-lg">
+          <div className="bg-muted/20 flex h-full items-center justify-center rounded-lg">
             <div className="text-center">
               <p className="text-muted-foreground">
                 No GPS data available for selected drivers
@@ -809,12 +825,12 @@ export function TrackVisualization({ }: TrackVisualizationProps) {
             <div className="relative h-full">
               <canvas
                 ref={canvasRef}
-                className="w-full h-full"
+                className="h-full w-full"
                 style={{
-                  imageRendering: "auto",
-                  touchAction: "none",
-                  background: "#0f0f12",
-                  overflow: "visible", // NEEDED for camera panning / dragging.
+                  imageRendering: 'auto',
+                  touchAction: 'none',
+                  background: '#0f0f12',
+                  overflow: 'visible', // NEEDED for camera panning / dragging.
                 }}
               />
 

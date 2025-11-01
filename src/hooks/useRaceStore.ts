@@ -11,14 +11,14 @@ interface RaceState {
   // shared animation state
   animationProgress: number; // 0..1
   isPlaying: boolean;
-  
+
   // Location data fetching state
   sessionLocationData: Record<number, LocationData[]>;
   loadedDrivers: Set<number>;
   fetchingDrivers: Set<number>;
   isLocationDataLoading: boolean;
   locationError: Error | null;
-  
+
   // Car data (telemetry) fetching state
   sessionCarData: Record<number, CarData[]>;
   loadedCarDataDrivers: Set<number>;
@@ -40,10 +40,13 @@ interface RaceState {
   setError: (error: string | null) => void;
   setAnimationProgress: (p: number) => void;
   setIsPlaying: (v: boolean) => void;
-  
+
   // Location data actions
   setSessionLocationData: (data: Record<number, LocationData[]>) => void;
-  addDriverLocationData: (driverNumber: number, locationData: LocationData[]) => void;
+  addDriverLocationData: (
+    driverNumber: number,
+    locationData: LocationData[]
+  ) => void;
   setLoadedDrivers: (drivers: Set<number>) => void;
   addLoadedDriver: (driverNumber: number) => void;
   setFetchingDrivers: (drivers: Set<number>) => void;
@@ -57,7 +60,7 @@ interface RaceState {
     isLoading: boolean;
     progressInfo?: ProgressInfo;
   }) => void;
-  
+
   // Car data (telemetry) actions
   setSessionCarData: (data: Record<number, CarData[]>) => void;
   addDriverCarData: (driverNumber: number, carData: CarData[]) => void;
@@ -68,13 +71,20 @@ interface RaceState {
   removeFetchingCarDataDriver: (driverNumber: number) => void;
   setIsCarDataLoading: (loading: boolean) => void;
   setCarDataError: (error: Error | null) => void;
-  
+
   // High-level car data fetching
-  fetchSingleDriverCarData: (driverNumber: number, options?: {
-    onProgress?: (completed: number, total: number, progressInfo?: ProgressInfo) => void;
-    dateChunkingOptions?: any;
-  }) => Promise<void>;
-  
+  fetchSingleDriverCarData: (
+    driverNumber: number,
+    options?: {
+      onProgress?: (
+        completed: number,
+        total: number,
+        progressInfo?: ProgressInfo
+      ) => void;
+      dateChunkingOptions?: any;
+    }
+  ) => Promise<void>;
+
   reset: () => void;
 }
 
@@ -87,14 +97,14 @@ let globalState = {
   error: null as string | null,
   animationProgress: 0,
   isPlaying: false,
-  
+
   // Location data fetching state
   sessionLocationData: {} as Record<number, LocationData[]>,
   loadedDrivers: new Set<number>(),
   fetchingDrivers: new Set<number>(),
   isLocationDataLoading: false,
   locationError: null as Error | null,
-  
+
   // Car data (telemetry) fetching state
   sessionCarData: {} as Record<number, CarData[]>,
   loadedCarDataDrivers: new Set<number>(),
@@ -186,18 +196,24 @@ export function useRaceStore(): RaceState {
   }, []);
 
   // Location data actions
-  const setSessionLocationData = useCallback((data: Record<number, LocationData[]>) => {
-    setState({ sessionLocationData: data });
-  }, []);
+  const setSessionLocationData = useCallback(
+    (data: Record<number, LocationData[]>) => {
+      setState({ sessionLocationData: data });
+    },
+    []
+  );
 
-  const addDriverLocationData = useCallback((driverNumber: number, locationData: LocationData[]) => {
-    setState(state => ({
-      sessionLocationData: {
-        ...state.sessionLocationData,
-        [driverNumber]: locationData
-      }
-    }));
-  }, []);
+  const addDriverLocationData = useCallback(
+    (driverNumber: number, locationData: LocationData[]) => {
+      setState(state => ({
+        sessionLocationData: {
+          ...state.sessionLocationData,
+          [driverNumber]: locationData,
+        },
+      }));
+    },
+    []
+  );
 
   const setLoadedDrivers = useCallback((drivers: Set<number>) => {
     setState({ loadedDrivers: drivers });
@@ -205,7 +221,7 @@ export function useRaceStore(): RaceState {
 
   const addLoadedDriver = useCallback((driverNumber: number) => {
     setState(state => ({
-      loadedDrivers: new Set([...state.loadedDrivers, driverNumber])
+      loadedDrivers: new Set([...state.loadedDrivers, driverNumber]),
     }));
   }, []);
 
@@ -215,7 +231,7 @@ export function useRaceStore(): RaceState {
 
   const addFetchingDriver = useCallback((driverNumber: number) => {
     setState(state => ({
-      fetchingDrivers: new Set([...state.fetchingDrivers, driverNumber])
+      fetchingDrivers: new Set([...state.fetchingDrivers, driverNumber]),
     }));
   }, []);
 
@@ -240,14 +256,17 @@ export function useRaceStore(): RaceState {
     setState({ sessionCarData: data });
   }, []);
 
-  const addDriverCarData = useCallback((driverNumber: number, carData: CarData[]) => {
-    setState(state => ({
-      sessionCarData: {
-        ...state.sessionCarData,
-        [driverNumber]: carData
-      }
-    }));
-  }, []);
+  const addDriverCarData = useCallback(
+    (driverNumber: number, carData: CarData[]) => {
+      setState(state => ({
+        sessionCarData: {
+          ...state.sessionCarData,
+          [driverNumber]: carData,
+        },
+      }));
+    },
+    []
+  );
 
   const setLoadedCarDataDrivers = useCallback((drivers: Set<number>) => {
     setState({ loadedCarDataDrivers: drivers });
@@ -255,7 +274,10 @@ export function useRaceStore(): RaceState {
 
   const addLoadedCarDataDriver = useCallback((driverNumber: number) => {
     setState(state => ({
-      loadedCarDataDrivers: new Set([...state.loadedCarDataDrivers, driverNumber])
+      loadedCarDataDrivers: new Set([
+        ...state.loadedCarDataDrivers,
+        driverNumber,
+      ]),
     }));
   }, []);
 
@@ -265,7 +287,10 @@ export function useRaceStore(): RaceState {
 
   const addFetchingCarDataDriver = useCallback((driverNumber: number) => {
     setState(state => ({
-      fetchingCarDataDrivers: new Set([...state.fetchingCarDataDrivers, driverNumber])
+      fetchingCarDataDrivers: new Set([
+        ...state.fetchingCarDataDrivers,
+        driverNumber,
+      ]),
     }));
   }, []);
 
@@ -286,80 +311,94 @@ export function useRaceStore(): RaceState {
   }, []);
 
   // High-level car data fetching method
-  const fetchSingleDriverCarData = useCallback(async (
-    driverNumber: number,
-    options?: {
-      onProgress?: (completed: number, total: number, progressInfo?: ProgressInfo) => void;
-      dateChunkingOptions?: any;
-    }
-  ) => {
-    if (!globalState.selectedSession) {
-      throw new Error('No session selected');
-    }
-
-    // Check if already fetching this driver
-    if (globalState.fetchingCarDataDrivers.has(driverNumber)) {
-      console.log(`Already fetching car data for driver ${driverNumber}`);
-      return;
-    }
-
-    // Check if already loaded this driver
-    if (globalState.loadedCarDataDrivers.has(driverNumber)) {
-      console.log(`Car data for driver ${driverNumber} already loaded`);
-      return;
-    }
-
-    try {
-      // Mark as fetching
-      addFetchingCarDataDriver(driverNumber);
-      setIsCarDataLoading(true);
-      setCarDataError(null);
-
-      // Import API here to avoid circular dependencies
-      const { f1Api } = await import('@/api/f1Api');
-      
-      const carData = await f1Api.getSingleDriverCarData(
-        globalState.selectedSession.session_key,
-        driverNumber,
-        options
-      );
-      
-      // Store the data
-      addDriverCarData(driverNumber, carData);
-      addLoadedCarDataDriver(driverNumber);
-      
-      console.log(`Successfully fetched ${carData.length} car data points for driver ${driverNumber}`);
-      
-    } catch (error) {
-      console.error(`Failed to fetch car data for driver ${driverNumber}:`, error);
-      setCarDataError(error as Error);
-      throw error;
-    } finally {
-      removeFetchingCarDataDriver(driverNumber);
-      setIsCarDataLoading(false);
-    }
-  }, [
-    addFetchingCarDataDriver,
-    setIsCarDataLoading,
-    setCarDataError,
-    addDriverCarData,
-    addLoadedCarDataDriver,
-    removeFetchingCarDataDriver
-  ]);
-
-  const setLoadingProgress = useCallback((progress: {
-    loaded: number;
-    total: number;
-    isLoading: boolean;
-    progressInfo?: ProgressInfo;
-  }) => {
-    setState({ 
-      loadingProgress: {
-        ...progress,
-        progressInfo: progress.progressInfo || undefined
+  const fetchSingleDriverCarData = useCallback(
+    async (
+      driverNumber: number,
+      options?: {
+        onProgress?: (
+          completed: number,
+          total: number,
+          progressInfo?: ProgressInfo
+        ) => void;
+        dateChunkingOptions?: any;
       }
-    });
-  }, []);
+    ) => {
+      if (!globalState.selectedSession) {
+        throw new Error('No session selected');
+      }
+
+      // Check if already fetching this driver
+      if (globalState.fetchingCarDataDrivers.has(driverNumber)) {
+        console.log(`Already fetching car data for driver ${driverNumber}`);
+        return;
+      }
+
+      // Check if already loaded this driver
+      if (globalState.loadedCarDataDrivers.has(driverNumber)) {
+        console.log(`Car data for driver ${driverNumber} already loaded`);
+        return;
+      }
+
+      try {
+        // Mark as fetching
+        addFetchingCarDataDriver(driverNumber);
+        setIsCarDataLoading(true);
+        setCarDataError(null);
+
+        // Import API here to avoid circular dependencies
+        const { f1Api } = await import('@/api/f1Api');
+
+        const carData = await f1Api.getSingleDriverCarData(
+          globalState.selectedSession.session_key,
+          driverNumber,
+          options
+        );
+
+        // Store the data
+        addDriverCarData(driverNumber, carData);
+        addLoadedCarDataDriver(driverNumber);
+
+        console.log(
+          `Successfully fetched ${carData.length} car data points for driver ${driverNumber}`
+        );
+      } catch (error) {
+        console.error(
+          `Failed to fetch car data for driver ${driverNumber}:`,
+          error
+        );
+        setCarDataError(error as Error);
+        throw error;
+      } finally {
+        removeFetchingCarDataDriver(driverNumber);
+        setIsCarDataLoading(false);
+      }
+    },
+    [
+      addFetchingCarDataDriver,
+      setIsCarDataLoading,
+      setCarDataError,
+      addDriverCarData,
+      addLoadedCarDataDriver,
+      removeFetchingCarDataDriver,
+    ]
+  );
+
+  const setLoadingProgress = useCallback(
+    (progress: {
+      loaded: number;
+      total: number;
+      isLoading: boolean;
+      progressInfo?: ProgressInfo;
+    }) => {
+      setState({
+        loadingProgress: {
+          ...progress,
+          progressInfo: progress.progressInfo || undefined,
+        },
+      });
+    },
+    []
+  );
 
   const reset = useCallback(() => {
     setState({
@@ -398,7 +437,7 @@ export function useRaceStore(): RaceState {
     error: globalState.error,
     animationProgress: globalState.animationProgress,
     isPlaying: globalState.isPlaying,
-    
+
     // Location data state
     sessionLocationData: globalState.sessionLocationData,
     loadedDrivers: globalState.loadedDrivers,
@@ -406,7 +445,7 @@ export function useRaceStore(): RaceState {
     isLocationDataLoading: globalState.isLocationDataLoading,
     locationError: globalState.locationError,
     loadingProgress: globalState.loadingProgress,
-    
+
     // Car data (telemetry) state
     sessionCarData: globalState.sessionCarData,
     loadedCarDataDrivers: globalState.loadedCarDataDrivers,
@@ -423,7 +462,7 @@ export function useRaceStore(): RaceState {
     setError,
     setAnimationProgress,
     setIsPlaying,
-    
+
     // Location data actions
     setSessionLocationData,
     addDriverLocationData,
@@ -435,7 +474,7 @@ export function useRaceStore(): RaceState {
     setIsLocationDataLoading,
     setLocationError,
     setLoadingProgress,
-    
+
     // Car data (telemetry) actions
     setSessionCarData,
     addDriverCarData,
@@ -446,10 +485,10 @@ export function useRaceStore(): RaceState {
     removeFetchingCarDataDriver,
     setIsCarDataLoading,
     setCarDataError,
-    
+
     // High-level car data fetching
     fetchSingleDriverCarData,
-    
+
     reset,
   };
 }

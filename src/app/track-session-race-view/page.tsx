@@ -1,22 +1,18 @@
-"use client";
+'use client';
 
-import { useEffect } from "react";
-import { useRaceStore } from "@/hooks/useRaceStore";
-import { Header, MainContent, ErrorDisplay } from "./components";
-import { useDriverDataManagement } from "@/hooks/useDriverDataManagement";
-import { useAnimationState } from "@/hooks/useAnimationState";
-import { VideoControls } from "./components/VideoControls";
+import { useEffect } from 'react';
+import { useRaceStore } from '@/hooks/useRaceStore';
+import { Header, MainContent, ErrorDisplay } from './components';
+import { useDriverDataManagement } from '@/hooks/useDriverDataManagement';
+import { useAnimationState } from '@/hooks/useAnimationState';
+import { VideoControls } from './components/VideoControls';
 
 export default function TrackSessionRaceViewPage() {
   const raceStore = useRaceStore();
 
   // Custom hooks for state management
-  const {
-    driverData,
-    isDriversLoading,
-    handleFetchDriver,
-    cancelAllFetches
-  } = useDriverDataManagement();
+  const { driverData, isDriversLoading, handleFetchDriver, cancelAllFetches } =
+    useDriverDataManagement();
 
   const {
     animationState,
@@ -24,7 +20,7 @@ export default function TrackSessionRaceViewPage() {
     handlePlayPause,
     handleReset,
     handleSpeedChange,
-    handleProgressChange
+    handleProgressChange,
   } = useAnimationState();
 
   // Reset animation state when session changes
@@ -47,7 +43,10 @@ export default function TrackSessionRaceViewPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-950">
-      <div className="flex-1 flex flex-col gap-1 p-0 m-0" style={{ display: 'contents' }}>
+      <div
+        className="m-0 flex flex-1 flex-col gap-1 p-0"
+        style={{ display: 'contents' }}
+      >
         <Header
           selectedSession={raceStore.selectedSession}
           driverCount={driverData.length}

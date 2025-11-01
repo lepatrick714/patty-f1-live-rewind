@@ -62,7 +62,7 @@ function F1DriverSelector() {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["drivers", selectedSession?.session_key],
+    queryKey: ['drivers', selectedSession?.session_key],
     queryFn: () =>
       selectedSession
         ? f1Api.getDrivers(selectedSession.session_key)

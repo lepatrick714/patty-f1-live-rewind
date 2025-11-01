@@ -13,13 +13,13 @@ interface SelectProps
 const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
   ({ className, size = 'default', children, ...props }, ref) => {
     return (
-      <div className="relative w-full max-w-full min-w-[8rem]">
+      <div className="relative w-full min-w-[8rem] max-w-full">
         <select
           ref={ref}
           data-slot="select"
           data-size={size}
           className={twMerge(
-            'border-input focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 shadow-xs w-full cursor-pointer appearance-none rounded-md border bg-transparent px-3 py-2 pr-8 text-sm outline-none transition-[color,box-shadow] focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 truncate',
+            'border-input focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 shadow-xs w-full cursor-pointer appearance-none truncate rounded-md border bg-transparent px-3 py-2 pr-8 text-sm outline-none transition-[color,box-shadow] focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50',
             size === 'default' && 'h-9',
             size === 'sm' && 'h-8',
             className
@@ -181,7 +181,7 @@ function CustomSelect({
   }, [value, options]);
 
   return (
-    <div ref={dropdownRef} className="relative w-full max-w-full min-w-[8rem]">
+    <div ref={dropdownRef} className="relative w-full min-w-[8rem] max-w-full">
       <button
         ref={triggerRef}
         type="button"
@@ -198,7 +198,7 @@ function CustomSelect({
       >
         <span
           className={twMerge(
-            'truncate min-w-0 flex-1 text-left',
+            'min-w-0 flex-1 truncate text-left',
             !selectedLabel && 'text-muted-foreground'
           )}
         >
@@ -206,7 +206,7 @@ function CustomSelect({
         </span>
         <ChevronDownIcon
           className={twMerge(
-            'size-4 opacity-50 transition-transform flex-shrink-0 ml-2',
+            'ml-2 size-4 flex-shrink-0 opacity-50 transition-transform',
             isOpen && 'rotate-180'
           )}
         />
@@ -230,9 +230,11 @@ function CustomSelect({
                 }
                 className="hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none disabled:pointer-events-none disabled:opacity-50"
               >
-                <span className="truncate flex-1 text-left">{option.label}</span>
+                <span className="flex-1 truncate text-left">
+                  {option.label}
+                </span>
                 {value === option.value && (
-                  <span className="absolute right-2 flex size-3.5 items-center justify-center flex-shrink-0">
+                  <span className="absolute right-2 flex size-3.5 flex-shrink-0 items-center justify-center">
                     <CheckIcon className="size-4" />
                   </span>
                 )}

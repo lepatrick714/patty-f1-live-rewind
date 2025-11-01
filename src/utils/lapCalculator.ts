@@ -35,10 +35,12 @@ export function calculateFastestLap(lapData: LapData[]): FastestLapResult {
 
   // Filter out invalid laps (pit out laps and laps with null duration)
   const validLaps = lapData.filter(lap => {
-    return lap.lap_duration !== null && 
-           lap.lap_duration !== undefined && 
-           !lap.is_pit_out_lap &&
-           lap.lap_duration > 0; // Additional safety check
+    return (
+      lap.lap_duration !== null &&
+      lap.lap_duration !== undefined &&
+      !lap.is_pit_out_lap &&
+      lap.lap_duration > 0
+    ); // Additional safety check
   });
 
   if (validLaps.length === 0) {
@@ -52,7 +54,9 @@ export function calculateFastestLap(lapData: LapData[]): FastestLapResult {
 
   // Calculate end time (start time + lap duration)
   const startTime = new Date(fastestLap.date_start);
-  const endTime = new Date(startTime.getTime() + (fastestLap.lap_duration! * 1000));
+  const endTime = new Date(
+    startTime.getTime() + fastestLap.lap_duration! * 1000
+  );
 
   // Format dates for API query (ISO format)
   const formatDateForAPI = (date: Date): string => {
@@ -67,7 +71,7 @@ export function calculateFastestLap(lapData: LapData[]): FastestLapResult {
     .map(lap => ({
       lapNumber: lap.lap_number,
       lapTime: lap.lap_duration!,
-      startTime: formatDateForAPI(new Date(lap.date_start))
+      startTime: formatDateForAPI(new Date(lap.date_start)),
     }))
     .sort((a, b) => a.lapTime - b.lapTime);
 
@@ -80,15 +84,15 @@ export function calculateFastestLap(lapData: LapData[]): FastestLapResult {
       endTime: endTimeFormatted,
       driverNumber: fastestLap.driver_number,
       sessionKey: fastestLap.session_key,
-      meetingKey: fastestLap.meeting_key
+      meetingKey: fastestLap.meeting_key,
     },
     summary: {
       totalLaps: lapData.length,
       validRacingLaps: validLaps.length,
       fastestLapNumber: fastestLap.lap_number,
-      fastestLapTime: `${fastestLap.lap_duration!.toFixed(3)}s`
+      fastestLapTime: `${fastestLap.lap_duration!.toFixed(3)}s`,
     },
-    allValidLaps: sortedValidLaps
+    allValidLaps: sortedValidLaps,
   };
 }
 
@@ -97,7 +101,7 @@ export function calculateFastestLap(lapData: LapData[]): FastestLapResult {
  */
 export function compareFastestLaps(driversData: Record<string, LapData[]>) {
   const results: Record<string, FastestLapResult | { error: string }> = {};
-  
+
   Object.keys(driversData).forEach(driverKey => {
     try {
       results[driverKey] = calculateFastestLap(driversData[driverKey]);
@@ -105,21 +109,21 @@ export function compareFastestLaps(driversData: Record<string, LapData[]>) {
       results[driverKey] = { error: (error as Error).message };
     }
   });
-  
+
   // Find overall fastest
   const validResults = Object.entries(results)
     .filter(([_, result]) => !('error' in result))
     .map(([driver, result]) => ({
       driver,
       lapTime: (result as FastestLapResult).fastestLap.lapTime,
-      lapNumber: (result as FastestLapResult).fastestLap.lapNumber
+      lapNumber: (result as FastestLapResult).fastestLap.lapNumber,
     }))
     .sort((a, b) => a.lapTime - b.lapTime);
-  
+
   return {
     byDriver: results,
     overallFastest: validResults[0] || null,
-    leaderboard: validResults
+    leaderboard: validResults,
   };
 }
 
@@ -127,12 +131,13 @@ export function compareFastestLaps(driversData: Record<string, LapData[]>) {
  * Calculate sector times and performance metrics
  */
 export function analyzeSectorPerformance(lapData: LapData[]) {
-  const validLaps = lapData.filter(lap => 
-    lap.lap_duration !== null && 
-    !lap.is_pit_out_lap &&
-    lap.duration_sector_1 !== null &&
-    lap.duration_sector_2 !== null &&
-    lap.duration_sector_3 !== null
+  const validLaps = lapData.filter(
+    lap =>
+      lap.lap_duration !== null &&
+      !lap.is_pit_out_lap &&
+      lap.duration_sector_1 !== null &&
+      lap.duration_sector_2 !== null &&
+      lap.duration_sector_3 !== null
   );
 
   if (validLaps.length === 0) {
@@ -156,7 +161,7 @@ export function analyzeSectorPerformance(lapData: LapData[]) {
     bestSectors: {
       sector1: bestSector1,
       sector2: bestSector2,
-      sector3: bestSector3
+      sector3: bestSector3,
     },
     theoreticalBest,
     actualFastest: fastestLapWithSectors.lap_duration!,
@@ -164,7 +169,7 @@ export function analyzeSectorPerformance(lapData: LapData[]) {
     fastestLapSectors: {
       sector1: fastestLapWithSectors.duration_sector_1!,
       sector2: fastestLapWithSectors.duration_sector_2!,
-      sector3: fastestLapWithSectors.duration_sector_3!
-    }
+      sector3: fastestLapWithSectors.duration_sector_3!,
+    },
   };
 }

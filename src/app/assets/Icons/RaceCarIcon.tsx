@@ -5,7 +5,10 @@ interface RaceCarIconProps {
   size?: number;
 }
 
-export const RaceCarIcon: React.FC<RaceCarIconProps> = ({ className = "", size = 16 }) => {
+export const RaceCarIcon: React.FC<RaceCarIconProps> = ({
+  className = '',
+  size = 16,
+}) => {
   return (
     <svg
       width={size}
@@ -23,7 +26,7 @@ export const RaceCarIcon: React.FC<RaceCarIconProps> = ({ className = "", size =
           <stop offset="100%" stopColor="#FFD700" stopOpacity="0.3" />
         </radialGradient>
       </defs>
-      
+
       {/* Fire Trail */}
       <ellipse
         cx="1"
@@ -43,30 +46,18 @@ export const RaceCarIcon: React.FC<RaceCarIconProps> = ({ className = "", size =
         className="animate-pulse"
         style={{ animationDelay: '0.2s' }}
       />
-      
+
       {/* Car Body */}
       <path
         d="M4 14h2.5L8 10h8l1.5 4H20c1.1 0 2 .9 2 2v2c0 1.1-.9 2-2 2h-1c0 1.1-.9 2-2 2s-2-.9-2-2H9c0 1.1-.9 2-2 2s-2-.9-2-2H4c-1.1 0-2-.9-2-2v-2c0-1.1.9-2 2-2z"
         fill="currentColor"
       />
       {/* Front Wing */}
-      <path
-        d="M2 14h2v2H2v-2z"
-        fill="currentColor"
-      />
+      <path d="M2 14h2v2H2v-2z" fill="currentColor" />
       {/* Rear Wing */}
-      <path
-        d="M20 12h2v2h-2v-2z"
-        fill="currentColor"
-      />
+      <path d="M20 12h2v2h-2v-2z" fill="currentColor" />
       {/* Driver Helmet */}
-      <circle
-        cx="12"
-        cy="11"
-        r="1.5"
-        fill="currentColor"
-        opacity="0.8"
-      />
+      <circle cx="12" cy="11" r="1.5" fill="currentColor" opacity="0.8" />
       {/* Front Wheel */}
       <circle
         cx="7"
