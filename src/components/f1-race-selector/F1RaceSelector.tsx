@@ -245,8 +245,6 @@ export function F1RaceSelector() {
 
   const handleMeetingChange = (meetingKey: string) => {
     const parsed = meetingKey === '' ? null : parseInt(meetingKey);
-    console.log('here: sessions:', sessions);
-
     setSelectorState(prev => ({
       ...prev,
       selectedMeetingKey: parsed,
