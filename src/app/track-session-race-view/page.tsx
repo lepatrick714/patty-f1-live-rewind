@@ -14,106 +14,10 @@ import {
   PauseIcon, 
   PlayIcon, 
   RotateCcwIcon, 
-  ZapIcon,
-  TimerIcon,
-  UserIcon 
+  ZapIcon
 } from "@/app/assets/Icons";
-
-// Driver Selector Component for Session View
-function SessionDriverSelector({
-  driverData,
-  selectedDrivers,
-  onToggleDriver,
-  sessionLocationData,
-  isLoading
-}: {
-  driverData: any[];
-  selectedDrivers: number[];
-  onToggleDriver: (driverNumber: number) => void;
-  sessionLocationData: Record<number, any[]>;
-  isLoading: boolean;
-}) {
-  return (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <UserIcon className="w-5 h-5" />
-          Drivers ({selectedDrivers.length} selected)
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2 max-h-[600px] overflow-y-auto">
-        {driverData.map((driver) => {
-          const isSelected = selectedDrivers.includes(driver.driver_number);
-          const hasLocationData = sessionLocationData[driver.driver_number]?.length > 0;
-          
-          return (
-            <Button
-              key={driver.driver_number}
-              variant={isSelected ? "default" : "outline"}
-              size="sm"
-              onClick={() => onToggleDriver(driver.driver_number)}
-              disabled={!hasLocationData}
-              className="w-full justify-start gap-2 h-auto py-3"
-              style={{
-                backgroundColor: isSelected ? `#${driver.team_colour}` : undefined,
-                borderColor: hasLocationData ? `#${driver.team_colour}` : undefined,
-              }}
-            >
-              <div className="flex items-center gap-2 w-full">
-                <span className="font-bold">#{driver.driver_number}</span>
-                <div className="flex flex-col items-start text-left">
-                  <span className="text-sm font-medium">{driver.name_acronym}</span>
-                  <span className="text-xs opacity-75">{driver.team_name}</span>
-                </div>
-              </div>
-              {!hasLocationData && (
-                <span className="text-xs text-muted-foreground ml-auto">No data</span>
-              )}
-            </Button>
-          );
-        })}
-        
-        {driverData.length === 0 && !isLoading && (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground text-sm">
-              No drivers available for this session
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-// Right Panel Placeholder for Telemetry
-function TelemetryPanel() {
-  return (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <ZapIcon className="w-5 h-5" />
-          Live Telemetry
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="text-center py-8">
-          <ZapIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Coming Soon</h3>
-          <p className="text-muted-foreground text-sm">
-            Real-time telemetry data will be displayed here
-          </p>
-        </div>
-        <div className="space-y-2 text-sm text-muted-foreground">
-          <div>• Speed Data</div>
-          <div>• Throttle & Brake</div>
-          <div>• Tire Information</div>
-          <div>• Lap Times</div>
-          <div>• Position Data</div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+import { SessionDriverSelector } from "@/components/session-driver-selector";
+import { TelemetryPanel } from "@/components/f1-telemetry-panels/f1-single-driver-telemetry-panel";
 
 // Header Component
 function Header({ selectedSession, driverCount }: { selectedSession: any; driverCount: number }) {
@@ -170,7 +74,10 @@ function VideoControlsFooter({
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-zinc-400">
-                Loading driver location data...
+                {loadingProgress.progressInfo ? 
+                  `Loading ${loadingProgress.progressInfo.driverName || `Driver #${loadingProgress.progressInfo.driverNumber}`} - Chunk ${loadingProgress.progressInfo.currentChunk}/${loadingProgress.progressInfo.totalChunks}` :
+                  "Loading driver location data..."
+                }
               </span>
               <span className="text-zinc-300 font-medium">
                 {loadingProgress.loaded} / {loadingProgress.total}
@@ -257,79 +164,159 @@ function VideoControlsFooter({
 }
 
 export default function TrackSessionRaceViewPage() {
-  const { selectedSession } = useRaceStore();
-  const [loadingProgress, setLoadingProgress] = useState<{
-    loaded: number;
-    total: number;
-    isLoading: boolean;
-  }>({ loaded: 0, total: 0, isLoading: false });
+  const raceStore = useRaceStore();
   
-  const [selectedDrivers, setSelectedDrivers] = useState<number[]>([]);
   const [animationState, setAnimationState] = useState({
     isPlaying: false,
     progress: 0,
     speed: 1,
   });
 
+  // Track active fetch promises so we can cancel them
+  const [activeFetches, setActiveFetches] = useState<Map<number, AbortController>>(new Map());
+
   // Get drivers for the selected session
   const { data: driverData = [], isLoading: isDriversLoading } = useQuery({
-    queryKey: ["drivers", selectedSession?.session_key],
+    queryKey: ["drivers", raceStore.selectedSession?.session_key],
     queryFn: () =>
-      selectedSession
-        ? f1Api.getDrivers(selectedSession.session_key)
+      raceStore.selectedSession
+        ? f1Api.getDrivers(raceStore.selectedSession.session_key)
         : Promise.resolve([]),
-    enabled: !!selectedSession,
+    enabled: !!raceStore.selectedSession,
   });
 
-  // Get location data for all drivers in the session
-  const { 
-    data: sessionLocationData = {}, 
-    isLoading: isLocationDataLoading,
-    error: locationError 
-  } = useQuery({
-    queryKey: ["session-location-data", selectedSession?.session_key],
-    queryFn: async () => {
-      if (!selectedSession) return {};
-      
-      setLoadingProgress({ loaded: 0, total: 0, isLoading: true });
-      
-      const data = await f1Api.getAllDriversLocationData(
-        selectedSession.session_key,
+  // Function to fetch location data for a single driver
+  const fetchSingleDriverData = async (driverNumber: number): Promise<void> => {
+    if (!raceStore.selectedSession) return;
+    
+    // Create an AbortController for this fetch
+    const abortController = new AbortController();
+    const currentSessionKey = raceStore.selectedSession.session_key;
+    
+    // Store the controller so we can cancel it later
+    setActiveFetches(prev => new Map(prev.set(driverNumber, abortController)));
+    
+    // Mark as fetching
+    raceStore.addFetchingDriver(driverNumber);
+    raceStore.setIsLocationDataLoading(true);
+    
+    try {
+      const data = await f1Api.getSingleDriverLocationData(
+        currentSessionKey,
+        driverNumber,
         {
-          batchSize: 3, // Smaller batches to be more conservative
-          delayBetweenBatches: 150, // Slightly longer delay
-          onProgress: (loaded, total) => {
-            setLoadingProgress({ loaded, total, isLoading: true });
+          onProgress: (loaded, total, info) => {
+            // Only update progress if this fetch hasn't been cancelled and session hasn't changed
+            if (!abortController.signal.aborted && raceStore.selectedSession?.session_key === currentSessionKey) {
+              raceStore.setLoadingProgress({ loaded, total, isLoading: true, progressInfo: info });
+            }
           }
         }
       );
       
-      setLoadingProgress({ loaded: 0, total: 0, isLoading: false });
-      return data;
-    },
-    enabled: !!selectedSession,
-    staleTime: 10 * 60 * 1000, // Cache for 10 minutes
-    retry: 2, // Retry failed requests
-  });
-
-  // Auto-select top 6 drivers when data loads
-  useEffect(() => {
-    if (driverData.length > 0 && selectedDrivers.length === 0) {
-      // Select first 6 drivers by driver number
-      const topDrivers = driverData
-        .sort((a, b) => a.driver_number - b.driver_number)
-        .slice(0, 6)
-        .map(d => d.driver_number);
-      setSelectedDrivers(topDrivers);
+      // Only update data if this fetch hasn't been cancelled and session hasn't changed
+      if (!abortController.signal.aborted && raceStore.selectedSession?.session_key === currentSessionKey) {
+        // Update session data with this driver's data
+        const newData = { 
+          ...raceStore.sessionLocationData, 
+          [driverNumber]: data 
+        };
+        raceStore.setSessionLocationData(newData);
+        
+        // Mark driver as loaded
+        raceStore.addLoadedDriver(driverNumber);
+        
+        // Only auto-select if the user hasn't selected any drivers yet AND this driver has data
+        if (data.length > 0 && raceStore.selectedDrivers.length === 0) {
+          raceStore.toggleDriver(driverNumber);
+        }
+      }
+      
+    } catch (error) {
+      // Only log error if it's not due to cancellation or session change
+      if (!abortController.signal.aborted && raceStore.selectedSession?.session_key === currentSessionKey) {
+        console.error(`Error fetching driver ${driverNumber} location data:`, error);
+        raceStore.setLocationError(error as Error);
+      }
+    } finally {
+      // Clean up: remove from active fetches and fetching set
+      setActiveFetches(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(driverNumber);
+        return newMap;
+      });
+      
+      raceStore.removeFetchingDriver(driverNumber);
     }
-  }, [driverData, selectedDrivers.length]);
+  };
 
-  const toggleDriver = (driverNumber: number) => {
-    setSelectedDrivers(prev => 
-      prev.includes(driverNumber)
-        ? prev.filter(d => d !== driverNumber)
-        : [...prev, driverNumber]
-    );
+  // Effect to manage loading state based on active fetches
+  useEffect(() => {
+    if (activeFetches.size === 0) {
+      raceStore.setIsLocationDataLoading(false);
+      raceStore.setLoadingProgress({ loaded: 0, total: 0, isLoading: false });
+    }
+  }, [activeFetches.size]);
+
+  // Handle manual driver fetch - simplified
+  const handleFetchDriver = (driverNumber: number) => {
+    // Don't fetch if already loaded or currently fetching
+    if (raceStore.loadedDrivers.has(driverNumber) || raceStore.fetchingDrivers.has(driverNumber)) {
+      return;
+    }
+    
+    fetchSingleDriverData(driverNumber);
+  };
+
+  // Function to cancel all active fetches
+  const cancelAllFetches = () => {
+    activeFetches.forEach((controller) => {
+      controller.abort();
+    });
+    setActiveFetches(new Map());
+    
+    // Clear fetching state
+    raceStore.setFetchingDrivers(new Set());
+    raceStore.setIsLocationDataLoading(false);
+    raceStore.setLoadingProgress({ loaded: 0, total: 0, isLoading: false });
+  };
+
+  // Reset state when session changes (but don't auto-fetch)
+  useEffect(() => {
+    if (driverData.length > 0 && raceStore.selectedSession) {
+      // Cancel any ongoing fetches from the previous session
+      cancelAllFetches();
+      
+      // Reset all state when session changes
+      raceStore.setSessionLocationData({});
+      raceStore.setLoadedDrivers(new Set());
+      raceStore.setFetchingDrivers(new Set());
+      raceStore.setLocationError(null);
+      raceStore.setIsLocationDataLoading(false);
+      raceStore.setLoadingProgress({ loaded: 0, total: 0, isLoading: false });
+      
+      // Clear selected drivers to prevent showing stale driver positions
+      raceStore.clearSelectedDrivers();
+      
+      // Reset animation state to prevent showing stale track visualization
+      setAnimationState({
+        isPlaying: false,
+        progress: 0,
+        speed: 1,
+      });
+    }
+  }, [driverData, raceStore.selectedSession]);
+
+  // Cleanup: cancel all fetches when component unmounts
+  useEffect(() => {
+    return () => {
+      cancelAllFetches();
+    };
+  }, []);
+
+  // Handle driver toggle
+  const handleDriverToggle = (driverNumber: number) => {
+    raceStore.toggleDriver(driverNumber);
   };
 
   const handlePlayPause = () => {
@@ -361,12 +348,12 @@ export default function TrackSessionRaceViewPage() {
     }));
   };
 
-  const isLoading = isDriversLoading || isLocationDataLoading;
+  const isLoading = isDriversLoading || raceStore.isLocationDataLoading;
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-950">
       {/* Header */}
-      <Header selectedSession={selectedSession} driverCount={driverData.length} />
+      <Header selectedSession={raceStore.selectedSession} driverCount={driverData.length} />
 
       {/* Main Content Area */}
       <main className="grid flex-1 grid-cols-12 gap-6 p-6">
@@ -374,20 +361,24 @@ export default function TrackSessionRaceViewPage() {
         <aside className="col-span-3">
           <SessionDriverSelector
             driverData={driverData}
-            selectedDrivers={selectedDrivers}
-            onToggleDriver={toggleDriver}
-            sessionLocationData={sessionLocationData}
-            isLoading={isLoading}
+            selectedDrivers={raceStore.selectedDrivers}
+            onToggleDriver={handleDriverToggle}
+            sessionLocationData={raceStore.sessionLocationData}
+            isLoading={raceStore.isLocationDataLoading}
+            loadingProgress={raceStore.loadingProgress}
+            loadedDrivers={raceStore.loadedDrivers}
+            fetchingDrivers={raceStore.fetchingDrivers}
+            onFetchDriver={handleFetchDriver}
           />
         </aside>
 
         {/* Center - Track Visualization */}
         <section className="col-span-6">
-          {selectedSession ? (
+          {raceStore.selectedSession ? (
             <SessionRaceVisualization
-              selectedSession={selectedSession}
-              selectedDrivers={selectedDrivers}
-              locationData={sessionLocationData}
+              selectedSession={raceStore.selectedSession}
+              selectedDrivers={raceStore.selectedDrivers}
+              locationData={raceStore.sessionLocationData}
               driverData={driverData}
               animationState={animationState}
               isLoading={isLoading}
@@ -408,7 +399,7 @@ export default function TrackSessionRaceViewPage() {
 
         {/* Right Panel - Telemetry */}
         <aside className="col-span-3">
-          <TelemetryPanel />
+          <TelemetryPanel driverNumber={raceStore.selectedDrivers[0]} />
         </aside>
       </main>
 
@@ -420,22 +411,18 @@ export default function TrackSessionRaceViewPage() {
         onSpeedChange={handleSpeedChange}
         onProgressChange={handleProgressChange}
         isLoading={isLoading}
-        loadingProgress={loadingProgress}
+        loadingProgress={raceStore.loadingProgress}
       />
 
       {/* Error Display */}
-      {locationError && (
-        <div className="fixed bottom-4 right-4 max-w-sm">
-          <Card className="border-destructive bg-destructive/10">
-            <CardContent className="pt-4">
-              <div className="text-destructive text-sm">
-                <p className="font-semibold">Error loading location data</p>
-                <p className="mt-1">
-                  {locationError instanceof Error ? locationError.message : String(locationError)}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+      {raceStore.locationError && (
+        <div className="bg-destructive/15 border-destructive/50 border text-destructive p-4 m-6 rounded-lg">
+          <div className="flex items-center gap-2">
+            <div className="text-sm font-medium">Error loading location data:</div>
+            <div className="text-sm">
+              {raceStore.locationError instanceof Error ? raceStore.locationError.message : String(raceStore.locationError)}
+            </div>
+          </div>
         </div>
       )}
     </div>

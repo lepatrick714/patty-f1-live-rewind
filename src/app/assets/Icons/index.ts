@@ -9,3 +9,4 @@ export { default as CheckIcon } from './CheckIcon';
 export { default as MapPinIcon } from './MapPinIcon';
 export { default as ChevronDownIcon } from './ChevronDownIcon';
 export { default as ChevronUpIcon } from './ChevronUpIcon';
+export { RaceCarIcon } from './RaceCarIcon';

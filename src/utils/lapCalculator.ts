@@ -1,4 +1,4 @@
-import { LapData } from '@/lib/types';
+import { LapData } from '@/models';
 
 export interface FastestLapResult {
   fastestLap: {
