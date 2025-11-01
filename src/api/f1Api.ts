@@ -1,5 +1,5 @@
 import { Session, Driver, LapData, LocationData } from '@/models';
-import { fetchWithRetry, withRetry } from '@/utils/retry';
+import { fetchWithRetry, withRetry, withBatchMap, BatchMapOptions } from '@/utils/retry';
 
 const API_BASE = (
   process.env.NEXT_PUBLIC_OPENF1_API_URL || 'https://api.openf1.org/v1'
@@ -82,5 +82,82 @@ export const f1Api = {
     }
 
     return { ok: false, attempts };
+  },
+
+  getAllDriversLocationData: async (
+    sessionKey: number,
+    options?: {
+      batchSize?: number;
+      delayBetweenBatches?: number;
+      onProgress?: (completed: number, total: number) => void;
+    }
+  ): Promise<{ [driverNumber: number]: LocationData[] }> => {
+    const { batchSize = 3, delayBetweenBatches = 100, onProgress } = options || {};
+    
+    // First get all drivers for this session
+    const drivers = await f1Api.getDrivers(sessionKey);
+    const driverNumbers = drivers.map(d => d.driver_number);
+    
+    // Use the generic batching utility
+    return withBatchMap(
+      driverNumbers,
+      async (driverNumber) => {
+        const url = `${API_BASE}/location?session_key=${sessionKey}&driver_number=${driverNumber}`;
+        return fetchWithRetry(url, `Failed to fetch location data for driver ${driverNumber}`);
+      },
+      (driverNumber) => driverNumber,
+      {
+        batchSize,
+        delayBetweenBatches,
+        onProgress,
+        onError: (driverNumber, error) => {
+          console.error(`Failed to fetch location data for driver ${driverNumber}:`, error);
+        },
+        continueOnError: true,
+        defaultValue: [] as LocationData[], // Return empty array for failed requests
+      }
+    );
+  },
+
+  getSessionLocationData: async (
+    sessionKey: number,
+    driverNumbers?: number[],
+    options?: {
+      batchSize?: number;
+      delayBetweenBatches?: number;
+      onProgress?: (completed: number, total: number) => void;
+    }
+  ): Promise<{ [driverNumber: number]: LocationData[] }> => {
+    const { batchSize = 5, delayBetweenBatches = 100, onProgress } = options || {};
+    
+    let targetDrivers: number[];
+    
+    if (driverNumbers) {
+      targetDrivers = driverNumbers;
+    } else {
+      // Get all drivers if none specified
+      const drivers = await f1Api.getDrivers(sessionKey);
+      targetDrivers = drivers.map(d => d.driver_number);
+    }
+    
+    // Use the generic batching utility
+    return withBatchMap(
+      targetDrivers,
+      async (driverNumber) => {
+        const url = `${API_BASE}/location?session_key=${sessionKey}&driver_number=${driverNumber}`;
+        return fetchWithRetry(url, `Failed to fetch location data for driver ${driverNumber}`);
+      },
+      (driverNumber) => driverNumber,
+      {
+        batchSize,
+        delayBetweenBatches,
+        onProgress,
+        onError: (driverNumber, error) => {
+          console.error(`Failed to fetch location data for driver ${driverNumber}:`, error);
+        },
+        continueOnError: true,
+        defaultValue: [] as LocationData[], // Return empty array for failed requests
+      }
+    );
   },
 };

@@ -1,65 +1,87 @@
-import Image from 'next/image';
+import Link from 'next/link';
+import { ZapIcon, TimerIcon, UserIcon } from '@/app/assets/Icons';
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between bg-white px-16 py-32 sm:items-start dark:bg-black">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-background p-4">
+      <div className="max-w-4xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="text-center space-y-4 py-12">
+          <h1 className="text-4xl font-bold tracking-tight">
+            F1 Live Rewind
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{' '}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{' '}
-            or the{' '}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{' '}
-            center.
+          <p className="text-xl text-muted-foreground">
+            Experience Formula 1 races like never before with live telemetry and track visualization
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="bg-foreground text-background flex h-12 w-full items-center justify-center gap-2 rounded-full px-5 transition-colors hover:bg-[#383838] md:w-[158px] dark:hover:bg-[#ccc]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] md:w-[158px] dark:border-white/[.145] dark:hover:bg-[#1a1a1a]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Feature Cards */}
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Race Dashboard */}
+          <Link href="/race-dashboard" className="group">
+            <div className="p-6 border rounded-lg bg-card hover:bg-accent transition-colors h-full">
+              <div className="flex items-center gap-3 mb-4">
+                <ZapIcon className="w-8 h-8 text-primary" />
+                <h2 className="text-2xl font-semibold">Race Dashboard</h2>
+              </div>
+              <p className="text-muted-foreground mb-4">
+                Analyze fastest laps and compare driver performance with detailed telemetry data and track visualization.
+              </p>
+              <div className="text-sm text-primary font-medium group-hover:underline">
+                View Race Dashboard →
+              </div>
+            </div>
+          </Link>
+
+          {/* Session Race View */}
+          <Link href="/track-session-race-view" className="group">
+            <div className="p-6 border rounded-lg bg-card hover:bg-accent transition-colors h-full">
+              <div className="flex items-center gap-3 mb-4">
+                <TimerIcon className="w-8 h-8 text-primary" />
+                <h2 className="text-2xl font-semibold">Live Session View</h2>
+              </div>
+              <p className="text-muted-foreground mb-4">
+                Watch entire F1 sessions unfold in real-time with full driver tracking and video-player-like controls.
+              </p>
+              <div className="text-sm text-primary font-medium group-hover:underline">
+                View Session Replay →
+              </div>
+            </div>
+          </Link>
         </div>
-      </main>
+
+        {/* Features List */}
+        <div className="grid sm:grid-cols-3 gap-4 pt-8">
+          <div className="text-center space-y-2">
+            <UserIcon className="w-8 h-8 text-primary mx-auto" />
+            <h3 className="font-semibold">Multi-Driver Tracking</h3>
+            <p className="text-sm text-muted-foreground">
+              Track up to 20 drivers simultaneously with real-time position updates
+            </p>
+          </div>
+          <div className="text-center space-y-2">
+            <ZapIcon className="w-8 h-8 text-primary mx-auto" />
+            <h3 className="font-semibold">Live Telemetry</h3>
+            <p className="text-sm text-muted-foreground">
+              Access speed, position, and timing data from the OpenF1 API
+            </p>
+          </div>
+          <div className="text-center space-y-2">
+            <TimerIcon className="w-8 h-8 text-primary mx-auto" />
+            <h3 className="font-semibold">Session Replay</h3>
+            <p className="text-sm text-muted-foreground">
+              Rewind and replay any session with video-player controls
+            </p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center pt-12 pb-8">
+          <p className="text-sm text-muted-foreground">
+            Powered by the OpenF1 API • Built with Next.js and React
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
