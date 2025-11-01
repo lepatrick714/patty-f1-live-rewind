@@ -415,13 +415,13 @@ export function SessionRaceVisualization({
       // Calculate actual session duration from data timestamps
       const firstDriver = currentDriversWithData[0];
       let sessionDuration = 60; // fallback
-      
+
       if (firstDriver.locations.length > 1) {
         const firstTimestamp = new Date(firstDriver.locations[0].date).getTime();
         const lastTimestamp = new Date(firstDriver.locations[firstDriver.locations.length - 1].date).getTime();
         sessionDuration = (lastTimestamp - firstTimestamp) / 1000; // Convert to seconds
       }
-      
+
       const progressIncrement =
         (deltaTime / sessionDuration) * animationState.speed;
       const next = Math.min(1, progressRef.current + progressIncrement);
@@ -509,7 +509,7 @@ export function SessionRaceVisualization({
     let lastX = 0,
       lastY = 0;
     let activePointerId: number | null = null;
-
+    
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       if (!bounds) return;
@@ -564,15 +564,15 @@ export function SessionRaceVisualization({
       canvas.style.cursor = 'grab';
       try {
         canvas.releasePointerCapture(e.pointerId);
-      } catch {}
+      } catch { }
     };
 
     const onDoubleClick = (e: MouseEvent) => {
       e.preventDefault();
-      cameraRef.current = { 
-        zoom: trackOpts.initialZoom || 1, 
-        panX: trackOpts.initialPanX || 0, 
-        panY: trackOpts.initialPanY || 0 
+      cameraRef.current = {
+        zoom: trackOpts.initialZoom || 1,
+        panX: trackOpts.initialPanX || 0,
+        panY: trackOpts.initialPanY || 0
       };
     };
 
