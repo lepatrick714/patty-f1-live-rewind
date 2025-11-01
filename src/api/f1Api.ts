@@ -326,10 +326,6 @@ export const f1Api = {
 
       return allResults;
     } catch (error) {
-      console.error('Error in getAllDriversLocationData:', error);
-
-      // Fallback to original method without date chunking
-      console.log('Falling back to original method without date chunking...');
       return withBatchMap(
         await f1Api
           .getDrivers(sessionKey)

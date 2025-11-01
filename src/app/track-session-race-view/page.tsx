@@ -7,6 +7,7 @@ import { useDriverDataManagement } from '@/hooks/useDriverDataManagement';
 import { useAnimationState } from '@/hooks/useAnimationState';
 import { VideoControls } from './components/VideoControls';
 import { DEFAULT_ANIMATION_STATE } from '@/constants/animation';
+import { Card } from '@/components/ui/card';
 
 export default function TrackSessionRaceViewPage() {
   const raceStore = useRaceStore();
@@ -40,14 +41,12 @@ export default function TrackSessionRaceViewPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-950">
-      <div
-        className="m-0 flex flex-1 flex-col gap-1 p-0"
-        style={{ display: 'contents' }}
-      >
+      <div className="border-b border-zinc-700 bg-zinc-900/50 backdrop-blur p-2 md:p-3 gap-3">
         <Header
           selectedSession={raceStore.selectedSession}
           driverCount={driverData.length}
         />
+
         {/* Footer with Video Controls */}
         <VideoControls
           animationState={animationState}
@@ -60,6 +59,7 @@ export default function TrackSessionRaceViewPage() {
           sessionData={raceStore.selectedSession || undefined}
         />
       </div>
+
       {/* Main Content Area */}
       <MainContent
         selectedSession={raceStore.selectedSession}

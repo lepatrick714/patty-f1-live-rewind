@@ -66,10 +66,6 @@ export const SessionDriverSelector = ({
           // Show loading animation for any driver being fetched
           const shouldShowLoadingAnimation = isCurrentlyFetching;
 
-          // Show fetch button only if not loaded, not fetching, and callback exists
-          const showFetchButton =
-            !isLoaded && !isCurrentlyFetching && onFetchDriver;
-
           return (
             <DriverCard
               key={driver.driver_number}
@@ -81,7 +77,6 @@ export const SessionDriverSelector = ({
               isCurrentlyLoading={isCurrentlyLoading || false}
               driverProgress={driverProgress}
               shouldShowLoadingAnimation={shouldShowLoadingAnimation}
-              showFetchButton={!!showFetchButton}
               loadingProgress={loadingProgress}
               onToggleDriver={onToggleDriver}
               onFetchDriver={onFetchDriver}

@@ -329,13 +329,11 @@ export function useRaceStore(): RaceState {
 
       // Check if already fetching this driver
       if (globalState.fetchingCarDataDrivers.has(driverNumber)) {
-        console.log(`Already fetching car data for driver ${driverNumber}`);
         return;
       }
 
       // Check if already loaded this driver
       if (globalState.loadedCarDataDrivers.has(driverNumber)) {
-        console.log(`Car data for driver ${driverNumber} already loaded`);
         return;
       }
 
@@ -357,10 +355,6 @@ export function useRaceStore(): RaceState {
         // Store the data
         addDriverCarData(driverNumber, carData);
         addLoadedCarDataDriver(driverNumber);
-
-        console.log(
-          `Successfully fetched ${carData.length} car data points for driver ${driverNumber}`
-        );
       } catch (error) {
         console.error(
           `Failed to fetch car data for driver ${driverNumber}:`,

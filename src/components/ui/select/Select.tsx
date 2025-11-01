@@ -215,7 +215,7 @@ function CustomSelect({
       {isOpen && (
         <div
           data-slot="select-content"
-          className="bg-popover text-popover-foreground animate-in fade-in-0 zoom-in-95 absolute left-0 right-0 top-full z-50 mt-1 max-h-60 min-w-full overflow-y-auto rounded-md border shadow-md"
+          className="bg-popover bg-zinc-800 text-popover-foreground animate-in fade-in-0 zoom-in-95 absolute left-0 right-0 top-full z-50 mt-1 max-h-60 min-w-full overflow-y-auto rounded-md border shadow-md"
         >
           <div className="p-1">
             {options.map(option => (
@@ -228,7 +228,7 @@ function CustomSelect({
                   !option.disabled &&
                   handleValueChange(option.value, option.label)
                 }
-                className="hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none disabled:pointer-events-none disabled:opacity-50"
+                className="hover:bg-zinc-700 hover:text-zinc-100 focus:bg-zinc-700 focus:text-zinc-100 relative flex w-full cursor-pointer items-center gap-2 rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none transition-colors duration-150 disabled:pointer-events-none disabled:opacity-50 hover:scale-[1.02] hover:shadow-sm"
               >
                 <span className="flex-1 truncate text-left">
                   {option.label}

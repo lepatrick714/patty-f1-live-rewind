@@ -46,9 +46,10 @@ export const VideoControls = ({
   loadingProgress,
   sessionData,
 }: VideoControlsProps) => {
+  const isDisabled = isLoading || !sessionData;
   return (
-    <div className="border-t border-zinc-800 bg-zinc-950 px-6 py-4">
-      <div className="space-y-4">
+    <div className="border-t border-zinc-800 bg-zinc-950 px-2 py-2 sm:px-4 sm:py-3 md:px-6 md:py-4">
+      <div className="space-y-2 sm:space-y-3 md:space-y-4">
         {/* Session Info */}
         {sessionData && <SessionInfo sessionData={sessionData} />}
 
@@ -58,12 +59,12 @@ export const VideoControls = ({
         )}
 
         {/* Video Controls */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
           <PlaybackControls
             animationState={animationState}
             onPlayPause={onPlayPause}
             onReset={onReset}
-            isLoading={isLoading}
+            isDisabled={isDisabled}
           />
 
           <SpeedControls
@@ -73,7 +74,7 @@ export const VideoControls = ({
         </div>
 
         {/* Progress Slider */}
-        <div className="space-y-2">
+        <div className="space-y-4 py-4 sm:py-6">
           <Slider
             value={[animationState.progress * 100]}
             onValueChange={([value]) => onProgressChange(value / 100)}
@@ -124,42 +125,44 @@ const PlaybackControls = ({
   animationState,
   onPlayPause,
   onReset,
-  isLoading,
+  isDisabled,
 }: {
   animationState: AnimationState;
   onPlayPause: () => void;
   onReset: () => void;
-  isLoading: boolean;
+  isDisabled: boolean;
 }) => (
-  <div className="flex items-center gap-4">
+  <div className="flex items-center gap-2 sm:gap-4">
     {/* Main Controls */}
     <Button
       variant="outline"
       size="icon"
       onClick={onReset}
-      disabled={isLoading}
-      className="border-zinc-700 bg-zinc-800 hover:bg-zinc-700"
+      disabled={isDisabled}
+      className="h-8 w-8 border-zinc-700 bg-zinc-800 hover:bg-zinc-700 sm:h-10 sm:w-10"
     >
-      <RotateCcwIcon className="h-4 w-4" />
+      <RotateCcwIcon className="h-3 w-3 sm:h-4 sm:w-4" />
     </Button>
 
     <Button
-      size="lg"
+      size="sm"
       onClick={onPlayPause}
-      disabled={isLoading}
-      className="flex items-center gap-2"
+      disabled={isDisabled}
+      className="flex items-center gap-1 text-xs sm:gap-2 sm:text-sm md:size-lg"
     >
       {animationState.isPlaying ? (
-        <PauseIcon className="h-5 w-5" />
+        <PauseIcon className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5" />
       ) : (
-        <PlayIcon className="h-5 w-5" />
+        <PlayIcon className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5" />
       )}
-      {animationState.isPlaying ? 'Pause' : 'Play'}
+      <span className="hidden sm:inline">
+        {animationState.isPlaying ? 'Pause' : 'Play'}
+      </span>
     </Button>
 
     {/* Progress Info */}
-    <div className="text-sm text-zinc-400">
-      Progress: {Math.round(animationState.progress * 100)}%
+    <div className="text-xs text-zinc-400 sm:text-sm">
+      {Math.round(animationState.progress * 100)}%
     </div>
   </div>
 );
@@ -173,25 +176,26 @@ const SpeedControls = ({
   onSpeedChange: (speed: number) => void;
 }) => {
   return (
-    <div className="flex items-center gap-2">
-      <div className="mr-2 text-sm text-zinc-400">
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
+      <div className="text-xs text-zinc-400 sm:mr-2 sm:text-sm">
         <div>Speed: {ANIMATION_SPEEDS.getUserSpeed(animationState.speed).toFixed(3)}x</div>
-        <div className="text-xs opacity-75">
+        <div className="text-xs opacity-75 sm:hidden md:block">
           ({animationState.speed.toFixed(2)}x internal)
         </div>
       </div>
-      {ANIMATION_SPEEDS.SPEED_OPTIONS.map(speed => (
+      <div className="flex flex-wrap gap-1 sm:gap-2">
+        {ANIMATION_SPEEDS.SPEED_OPTIONS.map(speed => (
           <Button
             key={speed}
             variant={animationState.speed === speed ? 'default' : 'outline'}
             size="sm"
             onClick={() => onSpeedChange(speed)}
-            className="w-16 border-zinc-700 bg-zinc-800 hover:bg-zinc-700"
+            className="h-7 w-12 text-xs border-zinc-700 bg-zinc-800 hover:bg-zinc-700 sm:h-8 sm:w-14 sm:text-sm md:w-16"
           >
             {ANIMATION_SPEEDS.getUserSpeed(speed).toFixed(3)}x
           </Button>
-        )
-      )}
+        ))}
+      </div>
     </div>
   );
 };

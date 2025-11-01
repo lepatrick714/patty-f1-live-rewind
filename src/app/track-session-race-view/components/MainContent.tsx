@@ -42,11 +42,11 @@ export const MainContent = ({
   onAnimationStateChange,
 }: MainContentProps) => {
   return (
-    <main className="flex flex-1 flex-col gap-6 p-6">
+    <main className="flex flex-1 flex-col gap-3 p-3 sm:gap-4 sm:p-4 lg:gap-6 lg:p-6">
       {/* Top Row - Driver Selector & Track Visualization */}
-      <div className="grid flex-1 grid-cols-12 gap-6">
-        {/* Driver Selector - 33% */}
-        <aside className="col-span-4">
+      <div className="grid flex-1 grid-cols-1 gap-3 sm:gap-4 xl:grid-cols-12 xl:gap-6">
+        {/* Driver Selector - Mobile: Full width, Desktop: 33% */}
+        <aside className="xl:col-span-4">
           <SessionDriverSelector
             driverData={driverData}
             selectedDrivers={selectedDrivers}
@@ -60,8 +60,8 @@ export const MainContent = ({
           />
         </aside>
 
-        {/* Track Visualization - 66% */}
-        <section className="col-span-8">
+        {/* Track Visualization - Mobile: Full width, Desktop: 66% */}
+        <section className="xl:col-span-8">
           {selectedSession ? (
             <SessionRaceVisualization
               selectedSession={selectedSession}

@@ -1,6 +1,6 @@
 'use client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TimerIcon, UserIcon } from '@/app/assets/Icons';
 import { useRaceStore } from '../../hooks/useRaceStore';
@@ -54,24 +54,54 @@ const mockDrivers = [
 ];
 
 function F1DriverSelector() {
-  const { selectedSession, selectedDrivers, toggleDriver } = useRaceStore();
-
-  // TODO: Implement API calls for production
   const {
-    data: drivers,
-    isLoading,
-    error,
+    selectedSession,
+    selectedDrivers,
+    toggleDriver,
+    loadedCarDataDrivers,
+    fetchingCarDataDrivers,
+    fetchSingleDriverCarData
+  } = useRaceStore();
+
+  // TODO: Implement API calls for production - using mock data for now
+  const {
+    data: drivers = mockDrivers,
+    isLoading = false,
+    error = null,
   } = useQuery({
     queryKey: ['drivers', selectedSession?.session_key],
     queryFn: () =>
       selectedSession
         ? f1Api.getDrivers(selectedSession.session_key)
-        : Promise.resolve([]),
+        : Promise.resolve(mockDrivers),
     enabled: !!selectedSession,
   });
 
   const sessionFastest = {}; // Placeholder for session fastest driver data
   const fastestInfo = {}; // Placeholder for fastest selected driver data
+
+  // Handle driver button click
+  const handleDriverClick = async (driverNumber: number) => {
+    const isLoaded = loadedCarDataDrivers.has(driverNumber);
+    const isFetching = fetchingCarDataDrivers.has(driverNumber);
+
+    if (isFetching) {
+      // Do nothing if already fetching
+      return;
+    }
+
+    if (!isLoaded) {
+      // First click: fetch data
+      try {
+        await fetchSingleDriverCarData(driverNumber);
+      } catch (error) {
+        console.error('Failed to fetch driver data:', error);
+      }
+    } else {
+      // Data is loaded: toggle selection
+      toggleDriver(driverNumber);
+    }
+  };
 
   // // Session-wide fastest driver (across all drivers in session)
   // const { data: sessionFastest } = useQuery<{
@@ -270,36 +300,55 @@ function F1DriverSelector() {
         <div className="h-full space-y-2 overflow-y-auto pr-1">
           {drivers?.map(driver => {
             const isSelected = selectedDrivers.includes(driver.driver_number);
+            const isLoaded = loadedCarDataDrivers.has(driver.driver_number);
+            const isFetching = fetchingCarDataDrivers.has(driver.driver_number);
             const isSessionFastest = null;
             // sessionFastest?.driverNumber === driver.driver_number;
             const isFastestSelected = null;
             // fastestInfo?.fastestDriverNumber === driver.driver_number;
+
+            // Determine button state and appearance
+            let buttonText = 'Fetch Data';
+            let buttonVariant: 'default' | 'outline' | 'secondary' | 'ghost' = 'ghost';
+            let buttonClassName = 'h-auto w-full justify-start p-0 text-left border-0 bg-transparent hover:bg-transparent shadow-none';
+            
+            if (isFetching) {
+              buttonText = 'Fetching...';
+              buttonClassName += ' cursor-not-allowed opacity-60';
+            } else if (isLoaded && isSelected) {
+              buttonText = 'Selected';
+              buttonClassName += ' text-green-100';
+            } else if (isLoaded && !isSelected) {
+              buttonText = 'Select';
+              buttonClassName += ' text-zinc-200';
+            } else {
+              // Not loaded yet - emphasize fetch action needed
+              buttonText = '👆 Click to Fetch Data';
+              buttonClassName += ' text-blue-400 hover:text-blue-300 opacity-90';
+            }
+            
             return (
-              <div
+              <Button
                 key={driver.driver_number}
-                className={[
-                  'group rounded-md px-2 py-1.5',
-                  isSelected
-                    ? 'border border-zinc-600 bg-zinc-900/60'
-                    : 'bg-zinc-900/30 hover:bg-zinc-900/40',
-                ].join(' ')}
+                variant={buttonVariant}
+                onClick={() => handleDriverClick(driver.driver_number)}
+                disabled={isFetching}
+                className={buttonClassName}
               >
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id={`driver-${driver.driver_number}`}
-                    checked={isSelected}
-                    onCheckedChange={() => toggleDriver(driver.driver_number)}
-                    className="h-4 w-4 border-zinc-700 data-[state=checked]:border-zinc-600 data-[state=checked]:bg-zinc-700"
-                  />
+                <div className={[
+                  'flex w-full items-center gap-3 rounded-md px-3 py-2 transition-colors',
+                  isFetching && 'cursor-not-allowed opacity-60',
+                  isLoaded && isSelected && 'border border-green-600 bg-green-700/20 hover:bg-green-700/30',
+                  isLoaded && !isSelected && 'border border-zinc-500 hover:border-zinc-400 hover:bg-zinc-800/50',
+                  !isLoaded && 'border-2 border-dashed border-blue-500/50 bg-blue-950/20 hover:bg-blue-900/30 hover:border-blue-400/70 cursor-pointer relative animate-pulse',
+                  !isLoaded && 'before:absolute before:inset-1 before:border before:border-dashed before:border-blue-400/30 before:rounded-sm before:pointer-events-none'
+                ].filter(Boolean).join(' ')}>
                   <span
-                    className="inline-block h-2.5 w-2.5 rounded-full ring-2 ring-white/10"
+                    className="inline-block h-3 w-3 rounded-full ring-2 ring-white/10"
                     style={{ backgroundColor: `#${driver.team_colour}` }}
                   />
-                  <label
-                    htmlFor={`driver-${driver.driver_number}`}
-                    className="min-w-0 flex-1 cursor-pointer"
-                  >
-                    <span className="inline-flex items-center gap-1 truncate text-sm font-semibold leading-tight tracking-wide text-zinc-100">
+                  <div className="min-w-0 flex-1">
+                    <div className="inline-flex items-center gap-1 truncate text-sm font-semibold leading-tight tracking-wide">
                       <span>{driver.name_acronym}</span>
                       <span className="ml-1 text-xs text-zinc-400">
                         #{driver.driver_number}
@@ -313,20 +362,31 @@ function F1DriverSelector() {
                         </span>
                       )}
                       {isFastestSelected && (
-                        <Badge
+                        <Badge  
                           variant="outline"
                           className="ml-1 h-4 whitespace-nowrap rounded-sm border-purple-400/40 bg-purple-500/10 px-1 py-0 text-[10px] leading-none text-purple-300"
                         >
                           FS
                         </Badge>
                       )}
-                    </span>
-                  </label>
+                    </div>
+                    <div className="truncate text-xs text-zinc-400">
+                      {driver.full_name} • {driver.team_name}
+                    </div>
+                  </div>
+                  <div className="text-red ml-auto flex items-center gap-2 text-xs font-medium">
+                    {isFetching && (
+                      <div className="h-3 w-3 animate-spin rounded-full border-2 border-zinc-600 border-t-zinc-300" />
+                    )}
+                    {!isLoaded && !isFetching && (
+                      <div className="flex items-center gap-1 text-blue-400">
+                        <div className="h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
+                      </div>
+                    )}
+                    <span className={!isLoaded && !isFetching ? 'font-semibold' : ''}>{buttonText}</span>
+                  </div>
                 </div>
-                <div className="truncate pl-8 text-xs text-zinc-400">
-                  {driver.full_name} • {driver.team_name}
-                </div>
-              </div>
+              </Button>
             );
           })}
         </div>

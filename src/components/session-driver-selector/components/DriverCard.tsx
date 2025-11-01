@@ -19,7 +19,6 @@ interface DriverCardProps {
   isCurrentlyLoading: boolean;
   driverProgress: number;
   shouldShowLoadingAnimation: boolean;
-  showFetchButton: boolean;
   loadingProgress?: {
     loaded: number;
     total: number;
@@ -39,48 +38,76 @@ export const DriverCard = ({
   isCurrentlyLoading,
   driverProgress,
   shouldShowLoadingAnimation,
-  showFetchButton,
   loadingProgress,
   onToggleDriver,
   onFetchDriver,
 }: DriverCardProps) => {
+  // Handle single button click logic
+  const handleButtonClick = () => {
+    if (isCurrentlyFetching || isCurrentlyLoading) {
+      // Do nothing if already fetching/loading
+      return;
+    }
+    
+    if (!hasLocationData && !isLoaded && onFetchDriver) {
+      // First click: fetch data
+      onFetchDriver(driver.driver_number);
+    } else {
+      // Data is loaded: toggle selection
+      onToggleDriver(driver.driver_number);
+    }
+  };
+
+  // Determine button state and appearance
+  let buttonText = 'Fetch Data';
+  let buttonVariant: 'default' | 'outline' | 'secondary' = 'outline';
+  let buttonStyle = {};
+  
+  if (isCurrentlyFetching || isCurrentlyLoading) {
+    buttonText = 'Fetching...';
+    buttonVariant = 'outline';
+  } else if (hasLocationData && isSelected) {
+    buttonText = 'Selected';
+    buttonVariant = 'default';
+    buttonStyle = { backgroundColor: `#${driver.team_colour}` };
+  } else if (hasLocationData && !isSelected) {
+    buttonText = 'Select';
+    buttonVariant = 'outline';
+    buttonStyle = { borderColor: `#${driver.team_colour}` };
+  } else {
+    // Not loaded yet - grayed out state
+    buttonText = 'Fetch Data';
+    buttonVariant = 'outline';
+  }
+
   return (
     <div className="relative mb-6">
-      <div className="flex gap-3">
-        <Button
-          variant={isSelected ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => onToggleDriver(driver.driver_number)}
-          disabled={false}
-          className="h-auto flex-1 justify-start gap-4 px-4 py-5"
-          style={{
-            backgroundColor: isSelected ? `#${driver.team_colour}` : undefined,
-            borderColor: hasLocationData ? `#${driver.team_colour}` : undefined,
-          }}
-        >
-          <div className="flex w-full items-center gap-4">
-            {/* Driver Photo Component */}
-            <DriverPhoto driver={driver} />
+      <Button
+        variant={buttonVariant}
+        size="sm"
+        onClick={handleButtonClick}
+        disabled={isCurrentlyFetching || isCurrentlyLoading}
+        className="h-auto w-full justify-start gap-4 px-4 py-5"
+        style={buttonStyle}
+      >
+        <div className="flex w-full items-center gap-4">
+          {/* Driver Photo Component */}
+          <DriverPhoto driver={driver} />
 
-            {/* Driver Info Component */}
-            <DriverInfo driver={driver} />
-          </div>
+          {/* Driver Info Component */}
+          <DriverInfo driver={driver} />
+        </div>
 
-          {/* Status Indicators Component */}
-          <DriverStatus
-            driver={driver}
-            hasLocationData={hasLocationData}
-            isLoaded={isLoaded}
-            isCurrentlyFetching={isCurrentlyFetching}
-            isCurrentlyLoading={isCurrentlyLoading}
-          />
-        </Button>
-
-        {/* Fetch Button Component */}
-        {showFetchButton && onFetchDriver && (
-          <FetchButton driver={driver} onFetchDriver={onFetchDriver} />
-        )}
-      </div>
+        {/* Status Indicators Component */}
+        <DriverStatus
+          driver={driver}
+          hasLocationData={hasLocationData}
+          isLoaded={isLoaded}
+          isCurrentlyFetching={isCurrentlyFetching}
+          isCurrentlyLoading={isCurrentlyLoading}
+          buttonText={buttonText}
+        />
+      </Button>
 
       {/* Loading Animation Component */}
       {shouldShowLoadingAnimation && (
@@ -146,22 +173,22 @@ const DriverStatus = ({
   isLoaded,
   isCurrentlyFetching,
   isCurrentlyLoading,
+  buttonText,
 }: {
   driver: DriverCardProps['driver'];
   hasLocationData: boolean;
   isLoaded: boolean;
   isCurrentlyFetching: boolean;
   isCurrentlyLoading: boolean;
+  buttonText: string;
 }) => (
   <div className="flex flex-col items-end gap-1">
-    {!hasLocationData && !isLoaded && !isCurrentlyFetching && (
-      <span className="text-muted-foreground text-xs">No data</span>
-    )}
-    {isCurrentlyFetching && !isCurrentlyLoading && (
-      <span className="text-xs" style={{ color: `#${driver.team_colour}` }}>
-        Fetching...
-      </span>
-    )}
+    <div className="flex items-center gap-2 text-xs font-medium">
+      {(isCurrentlyFetching || isCurrentlyLoading) && (
+        <div className="h-3 w-3 animate-spin rounded-full border-2 border-zinc-600 border-t-zinc-300" />
+      )}
+      <span>{buttonText}</span>
+    </div>
     {hasLocationData && (
       <div className="flex items-center gap-1">
         <div
@@ -172,28 +199,6 @@ const DriverStatus = ({
       </div>
     )}
   </div>
-);
-
-// Fetch Button Component
-const FetchButton = ({
-  driver,
-  onFetchDriver,
-}: {
-  driver: DriverCardProps['driver'];
-  onFetchDriver: (driverNumber: number) => void;
-}) => (
-  <Button
-    variant="outline"
-    size="sm"
-    onClick={() => onFetchDriver(driver.driver_number)}
-    className="h-auto min-w-20 px-4 py-5 text-xs font-medium"
-    style={{ borderColor: `#${driver.team_colour}` }}
-  >
-    <div className="flex flex-col items-center gap-1">
-      <span>Fetch</span>
-      <span className="text-xs opacity-75">Data</span>
-    </div>
-  </Button>
 );
 
 // Loading Animation Component

@@ -537,6 +537,7 @@ export function SessionRaceVisualization({
 
     const onPointerDown = (e: PointerEvent) => {
       if (e.button !== 0) return;
+      e.preventDefault();
       dragging = true;
       activePointerId = e.pointerId;
       lastX = e.clientX;
@@ -546,7 +547,7 @@ export function SessionRaceVisualization({
     };
 
     const onPointerMove = (e: PointerEvent) => {
-      if (e.pointerId !== activePointerId) return;
+      if (!dragging || e.pointerId !== activePointerId) return;
       const dx = e.clientX - lastX;
       const dy = e.clientY - lastY;
       lastX = e.clientX;
@@ -566,8 +567,13 @@ export function SessionRaceVisualization({
       } catch {}
     };
 
-    const onDoubleClick = () => {
-      cameraRef.current = { zoom: 1, panX: 0, panY: 0 };
+    const onDoubleClick = (e: MouseEvent) => {
+      e.preventDefault();
+      cameraRef.current = { 
+        zoom: trackOpts.initialZoom || 1, 
+        panX: trackOpts.initialPanX || 0, 
+        panY: trackOpts.initialPanY || 0 
+      };
     };
 
     canvas.style.cursor = 'grab';
@@ -577,6 +583,38 @@ export function SessionRaceVisualization({
     canvas.addEventListener('pointerup', onPointerUpOrCancel);
     canvas.addEventListener('pointercancel', onPointerUpOrCancel);
     canvas.addEventListener('dblclick', onDoubleClick);
+
+    // Fallback mouse events for better compatibility
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      dragging = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      canvas.style.cursor = 'grabbing';
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!dragging) return;
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      lastX = e.clientX;
+      lastY = e.clientY;
+
+      cameraRef.current.panX += dx;
+      cameraRef.current.panY += dy;
+    };
+
+    const onMouseUp = () => {
+      dragging = false;
+      canvas.style.cursor = 'grab';
+    };
+
+    // Add mouse event listeners as fallback
+    canvas.addEventListener('mousedown', onMouseDown);
+    canvas.addEventListener('mousemove', onMouseMove);
+    canvas.addEventListener('mouseup', onMouseUp);
+    canvas.addEventListener('mouseleave', onMouseUp);
 
     return () => {
       canvas.removeEventListener('wheel', onWheel);

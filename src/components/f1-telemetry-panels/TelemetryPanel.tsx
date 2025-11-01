@@ -90,14 +90,7 @@ export const TelemetryPanel = ({
     if (!selectedSession) return;
 
     try {
-      await fetchSingleDriverCarData(driverNumber, {
-        onProgress: (loaded, total, progressInfo) => {
-          console.log(
-            `Telemetry progress for driver ${driverNumber}: ${loaded}/${total}`,
-            progressInfo
-          );
-        },
-      });
+      await fetchSingleDriverCarData(driverNumber);
     } catch (error) {
       console.error('Failed to fetch telemetry:', error);
     }
