@@ -3,17 +3,27 @@
 import { F1DriverSelector } from '@/components/f1-drivers-selector/F1DriverSelector';
 import { F1RaceSelector } from '@/components/f1-race-selector';
 import { TrackVisualization } from '@/components/track-visualization';
+import { SimpleTelemetryPanel } from '@/components/race-telemetry-panel';
+import { RaceTimer } from '@/components/race-timer';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useRaceStore } from '@/hooks/useRaceStore';
 
 function RightPanel() {
+  const { animationProgress, isPlaying } = useRaceStore();
+
   return (
-    <div>
-      <h2>Right Panel</h2>
-      <div>
-        <p>Live Timing</p>
-        <p>Lap Analysis</p>
-        <p>Telemetry Data</p>
-        <p>Statistics</p>
+    <div className="flex h-full flex-col gap-4">
+      {/* Race Timer - pinned to the top */}
+      <div className="shrink-0">
+        <RaceTimer isPlaying={isPlaying} animationProgress={animationProgress} />
+      </div>
+      
+      {/* Telemetry Panel - takes remaining space */}
+      <div className="flex-1 min-h-0">
+        <SimpleTelemetryPanel 
+          animationProgress={animationProgress} 
+          isPlaying={isPlaying} 
+        />
       </div>
     </div>
   );

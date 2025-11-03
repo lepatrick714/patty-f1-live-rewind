@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Session, LapData, LocationData, CarData } from '@/models';
 import { ProgressInfo } from '@/utils/dateChunking';
 
@@ -125,7 +125,9 @@ const subscribers = new Set<() => void>();
 // Subscribe function
 function subscribe(callback: () => void) {
   subscribers.add(callback);
-  return () => subscribers.delete(callback);
+  return () => {
+    subscribers.delete(callback);
+  };
 }
 
 // Notify all subscribers
@@ -152,10 +154,10 @@ export function useRaceStore(): RaceState {
   const rerender = useCallback(() => forceUpdate({}), []);
 
   // Subscribe to state changes on mount, unsubscribe on unmount
-  useState(() => {
+  useEffect(() => {
     const unsubscribe = subscribe(rerender);
     return unsubscribe;
-  });
+  }, [rerender]);
 
   const setSelectedSession = useCallback((session: Session | null) => {
     setState({ selectedSession: session });
