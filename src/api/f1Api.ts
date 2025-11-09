@@ -1,4 +1,4 @@
-import { Session, Driver, LapData, LocationData, CarData } from '@/models';
+import { Session, Driver, LapData, LocationData, CarData, WeatherData } from '@/models';
 import { fetchWithRetry, withRetry } from '@/utils/retry';
 import { withBatchMap } from '@/utils/batch';
 import {
@@ -503,4 +503,10 @@ export const f1Api = {
       throw error;
     }
   },
+
+  getWeatherData: (sessionKey: number): Promise<WeatherData[]> =>
+    fetchWithRetry(
+      `${API_BASE}/weather?session_key=${sessionKey}`,
+      'Failed to fetch weather data'
+    ),
 };

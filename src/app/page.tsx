@@ -15,7 +15,7 @@ export default function Home() {
         </div>
 
         {/* Feature Cards */}
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {/* Race Dashboard */}
           <Link href="/race-dashboard" className="group">
             <div className="bg-card hover:bg-accent h-full rounded-lg border p-6 transition-colors">
@@ -36,7 +36,7 @@ export default function Home() {
           {/* Session Race View */}
           <Link href="/track-session-race-view" className="group">
             <div className="bg-card hover:bg-accent h-full rounded-lg border p-6 transition-colors">
-              <div className="mb-4 flex items-center gap-3">
+              <div className="mb-4 flex items-cernter gap-3">
                 <TimerIcon className="text-primary h-8 w-8" />
                 <h2 className="text-2xl font-semibold">Live Session View</h2>
               </div>
@@ -46,6 +46,25 @@ export default function Home() {
               </p>
               <div className="text-primary text-sm font-medium group-hover:underline">
                 View Session Replay →
+              </div>
+            </div>
+          </Link>
+
+          {/* Weather Track View */}
+          <Link href="/race-track-weather-view" className="group">
+            <div className="bg-card hover:bg-accent h-full rounded-lg border p-6 transition-colors">
+              <div className="mb-4 flex items-center gap-3">
+                <svg className="text-primary h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+                </svg>
+                <h2 className="text-2xl font-semibold">Weather Track View</h2>
+              </div>
+              <p className="text-muted-foreground mb-4">
+                Experience track weather conditions in real-time with dynamic
+                day/night cycles, rain effects, and temperature data.
+              </p>
+              <div className="text-primary text-sm font-medium group-hover:underline">
+                View Weather Replay →
               </div>
             </div>
           </Link>

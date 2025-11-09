@@ -3,16 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
 import { f1Api } from '@/api/f1Api';
 import { useRaceStore } from '@/hooks/useRaceStore';
 import { calculateFastestLap } from '@/utils/lapCalculator';
 import { getTrackOptimization } from '@/utils/trackConfig';
 import {
-  PauseIcon,
-  PlayIcon,
-  RotateCcwIcon,
   ZapIcon,
 } from '@/app/assets/Icons';
 import { TrackPlayerControlsPanel } from './TrackPlayerControlsPanel';
