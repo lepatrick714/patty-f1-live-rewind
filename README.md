@@ -10,7 +10,7 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 ### Live Demo Link:
-- https://patty-f1-live-rewind.vercel.app/track-session-race-view
+- https://patty-f1-live-rewind.vercel.app
 
 ### Gif Demo: 
 - ![Track session race view](./public/track-session-race-view.gif)
