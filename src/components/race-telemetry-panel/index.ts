@@ -1,1 +1,0 @@
-export { SimpleTelemetryPanel } from './SimpleTelemetryPanel';
